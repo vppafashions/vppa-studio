@@ -11,9 +11,12 @@ import { motion, AnimatePresence } from 'motion/react';
 // Initialize Gemini API
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
+type UploadMode = 'standard' | 'printed';
+
 interface ReferenceImage {
   file: File;
   preview: string;
+  label?: 'front' | 'back';
 }
 
 interface GeneratedView {
@@ -30,6 +33,7 @@ interface ApparelItem {
   analysis?: string;
   currentProcessingIndex?: number;
   generatedStyleId?: string;
+  uploadMode: UploadMode;
 }
 
 const MAX_PHOTOS_PER_ITEM = 5;
@@ -202,10 +206,14 @@ function StudioApp() {
   const [selectedStyle, setSelectedStyle] = useState(BACKGROUND_STYLES[0]);
   const [selectedGender, setSelectedGender] = useState<Gender>('women');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadMode, setUploadMode] = useState<UploadMode>('standard');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const printedFrontRef = useRef<HTMLInputElement>(null);
+  const printedBackRef = useRef<HTMLInputElement>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [pendingPrintedFront, setPendingPrintedFront] = useState<ReferenceImage | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -243,7 +251,8 @@ function StudioApp() {
         id: Math.random().toString(36).substr(2, 9),
         images,
         views: [],
-        status: 'idle'
+        status: 'idle',
+        uploadMode: 'standard'
       }
     ]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -271,6 +280,35 @@ function StudioApp() {
     ));
     setActiveItemId(null);
     if (addPhotoInputRef.current) addPhotoInputRef.current.value = '';
+  };
+
+  const handlePrintedFrontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = await readFileAsPreview(file);
+    setPendingPrintedFront({ file, preview, label: 'front' });
+    if (printedFrontRef.current) printedFrontRef.current.value = '';
+    setTimeout(() => printedBackRef.current?.click(), 200);
+  };
+
+  const handlePrintedBackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pendingPrintedFront) return;
+    const preview = await readFileAsPreview(file);
+    const backImage: ReferenceImage = { file, preview, label: 'back' };
+
+    setApparelItems(prev => [
+      ...prev,
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        images: [pendingPrintedFront, backImage],
+        views: [],
+        status: 'idle',
+        uploadMode: 'printed'
+      }
+    ]);
+    setPendingPrintedFront(null);
+    if (printedBackRef.current) printedBackRef.current.value = '';
   };
 
   const removePhotoFromItem = (itemId: string, photoIndex: number) => {
@@ -351,23 +389,31 @@ function StudioApp() {
       throw new Error("Max retries exceeded");
     };
 
-    const analyzeApparel = async (imageDataParts: { data: string; mimeType: string }[]): Promise<string> => {
-      const parts: any[] = imageDataParts.map(img => ({
+    const analyzeApparel = async (imageDataParts: { data: string; mimeType: string }[], isPrinted: boolean, labels?: ('front' | 'back' | undefined)[]): Promise<string> => {
+      const parts: any[] = imageDataParts.map((img, i) => ({
         inlineData: { data: img.data, mimeType: img.mimeType }
       }));
 
+      const printedContext = isPrinted && labels
+        ? `\nIMPORTANT: Image 1 is the FRONT of the garment. Image 2 is the BACK of the garment. The front and back have DIFFERENT prints/designs. You MUST describe each side separately and in extreme detail.\n`
+        : '';
+
       parts.push({
-        text: `You are a luxury product photography director. Analyze ${imageDataParts.length} reference photo(s) of this product to prepare for a high-end ecommerce photoshoot. Describe:
+        text: `You are a luxury product photography director. Analyze ${imageDataParts.length} reference photo(s) of this product to prepare for a high-end ecommerce photoshoot.
+${printedContext}
+Describe:
 
-1. PRODUCT: What exactly is this item? (e.g., monogram canvas crossbody bag, leather chelsea boot, silk scarf)
-2. EXACT COLORS: List every color precisely (e.g., "dark brown with tan monogram print, gold-tone hardware, natural cowhide leather trim")
-3. MATERIALS & TEXTURE: What is it made of and how does the surface look? (e.g., coated canvas with slight sheen, pebbled leather, matte suede)
-4. SHAPE & STRUCTURE: Describe the 3D form -- is it rigid, soft, structured? What is its silhouette?
-5. HARDWARE & DETAILS: Every visible detail -- zippers, buckles, buttons, stitching color, logos, tags, straps, closures
-6. DISTINCTIVE FEATURES: What makes this product unique or recognizable? Any branding, patterns, embossing?
-7. SCALE: Approximate size category (small accessory, medium bag, large garment, etc.)
+1. PRODUCT: What exactly is this item? (e.g., printed cotton t-shirt, graphic hoodie, patterned silk shirt)
+2. EXACT COLORS: List every color precisely -- base garment color AND all print/graphic colors
+3. MATERIALS & TEXTURE: What is it made of and how does the surface look?
+4. SHAPE & STRUCTURE: Describe the fit, cut, neckline, sleeve style, hem
+5. HARDWARE & DETAILS: Every visible detail -- tags, labels, stitching color, buttons, zippers
+${isPrinted ? `6. FRONT PRINT/DESIGN: Describe the FRONT graphic/print in extreme detail -- what does it depict, what colors, what position on the garment, how large is it, any text visible?
+7. BACK PRINT/DESIGN: Describe the BACK graphic/print in extreme detail -- what does it depict, what colors, what position on the garment, how large is it, any text visible?
+8. PRINT TECHNIQUE: Is it screen printed, sublimation, embroidered, DTG, vinyl? What is the finish -- matte, glossy, textured?` : `6. DISTINCTIVE FEATURES: What makes this product unique or recognizable? Any branding, patterns, embossing?`}
+${isPrinted ? '9' : '7'}. SCALE: Approximate size category
 
-Be extremely precise about colors and visual details. This description will guide an image generation model to faithfully recreate this exact product in professional studio photography.`
+Be EXTREMELY precise about the prints/graphics. Every detail matters -- the image generation model must reproduce the EXACT prints on the correct sides.`
       });
 
       const response = await callWithRetry(() => genAI.models.generateContent({
@@ -406,7 +452,7 @@ Be extremely precise about colors and visual details. This description will guid
         let analysis = item.analysis || '';
         if (!analysis) {
           try {
-            analysis = await analyzeApparel(imageDataParts);
+            analysis = await analyzeApparel(imageDataParts, item.uploadMode === 'printed', item.images.map(img => img.label));
             setApparelItems(prev => prev.map(f => f.id === item.id ? { ...f, analysis } : f));
             await sleep(1000);
           } catch (analysisError) {
@@ -436,8 +482,13 @@ Be extremely precise about colors and visual details. This description will guid
             parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
           }
 
+          const isPrinted = item.uploadMode === 'printed';
+          const printedRule = isPrinted
+            ? `\n- CRITICAL: This is a PRINTED garment. The FRONT and BACK have DIFFERENT prints/graphics. Image 1 is FRONT, Image 2 is BACK. Reproduce the EXACT prints on the correct sides. The prints must be clearly visible and accurate.`
+            : '';
+
           const analysisContext = analysis
-            ? `\n\nPRODUCT DETAILS (from analysis):\n${analysis}\n\nREPRODUCE THIS EXACT PRODUCT with all its specific colors, materials, hardware, and details.`
+            ? `\n\nPRODUCT DETAILS (from analysis):\n${analysis}\n\nREPRODUCE THIS EXACT PRODUCT with all its specific colors, materials, prints, and details.`
             : '';
 
           const isModelShot = v < 2;
@@ -451,7 +502,7 @@ ${analysisContext}
 
 CRITICAL RULES:
 - This must look like a real high-end fashion photograph, NOT a render or illustration.
-- The model must be wearing THIS EXACT product from the reference images -- same colors, same materials, same details.
+- The model must be wearing THIS EXACT product from the reference images -- same colors, same materials, same details.${printedRule}
 - BACKGROUND: ${selectedStyle.prompt}. Clean studio setting.
 - Professional fashion photography lighting -- soft, flattering beauty lighting.
 - The product must be clearly visible and recognizable on the model.
@@ -468,7 +519,7 @@ ${analysisContext}
 
 CRITICAL RULES:
 - This must look like a real photograph taken in a professional studio, NOT a render or illustration.
-- Reproduce the EXACT product from the reference images -- same colors, same materials, same details, same branding.
+- Reproduce the EXACT product from the reference images -- same colors, same materials, same details, same branding.${printedRule}
 - Soft, diffused studio lighting. No harsh shadows. Subtle contact shadow only.
 - Product must be clean, crisp, and perfectly presented.
 - NOTHING else in the frame -- no props, no text, no watermarks, no mannequins, no people.
@@ -534,6 +585,8 @@ Also provide a one-sentence product description.`,
       <input type="file" ref={addPhotoInputRef} onChange={handleAddPhotosToItem} accept="image/*" multiple className="hidden" />
       <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
       <input type="file" ref={fileInputRef} onChange={handleNewApparelUpload} accept="image/*" multiple className="hidden" />
+      <input type="file" ref={printedFrontRef} onChange={handlePrintedFrontUpload} accept="image/*" className="hidden" />
+      <input type="file" ref={printedBackRef} onChange={handlePrintedBackUpload} accept="image/*" className="hidden" />
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-strong">
@@ -583,22 +636,76 @@ Also provide a one-sentence product description.`,
           <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-end">
             {/* Upload */}
             <div className="flex-1 min-w-0">
-              <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-3 block">
-                Upload References
-              </label>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isGenerating}
-                className="w-full py-6 rounded-xl border border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all duration-300 flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-indigo-50 flex items-center justify-center transition-all">
-                  <Plus className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                  Upload References
+                </label>
+                <div className="flex rounded-md border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setUploadMode('standard')}
+                    className={`px-3 py-1 text-[10px] font-medium transition-all ${
+                      uploadMode === 'standard' ? 'bg-indigo-500 text-white' : 'bg-white text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    Standard
+                  </button>
+                  <button
+                    onClick={() => setUploadMode('printed')}
+                    className={`px-3 py-1 text-[10px] font-medium transition-all ${
+                      uploadMode === 'printed' ? 'bg-indigo-500 text-white' : 'bg-white text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    Printed Shirt
+                  </button>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm text-gray-500 group-hover:text-gray-700 font-medium transition-colors">New Apparel Item</p>
-                  <p className="text-[10px] text-gray-300">Select 1-5 photos of the same garment</p>
+              </div>
+              {uploadMode === 'standard' ? (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating}
+                  className="w-full py-6 rounded-xl border border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all duration-300 flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-indigo-50 flex items-center justify-center transition-all">
+                    <Plus className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm text-gray-500 group-hover:text-gray-700 font-medium transition-colors">New Apparel Item</p>
+                    <p className="text-[10px] text-gray-300">Select 1-5 photos of the same garment</p>
+                  </div>
+                </button>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => printedFrontRef.current?.click()}
+                    disabled={isGenerating || !!pendingPrintedFront}
+                    className="flex-1 py-6 rounded-xl border border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all duration-300 flex flex-col items-center justify-center gap-2 group disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {pendingPrintedFront ? (
+                      <>
+                        <img src={pendingPrintedFront.preview} alt="Front" className="w-12 h-12 rounded-lg object-cover" />
+                        <span className="text-[10px] text-emerald-500 font-medium">Front uploaded</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 rounded-lg bg-gray-50 group-hover:bg-indigo-50 flex items-center justify-center transition-all">
+                          <Plus className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-medium">Front View</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => pendingPrintedFront && printedBackRef.current?.click()}
+                    disabled={isGenerating || !pendingPrintedFront}
+                    className="flex-1 py-6 rounded-xl border border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all duration-300 flex flex-col items-center justify-center gap-2 group disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 group-hover:bg-indigo-50 flex items-center justify-center transition-all">
+                      <Plus className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-medium">Back View</span>
+                  </button>
                 </div>
-              </button>
+              )}
             </div>
 
             {/* Style Selector */}
@@ -731,6 +838,9 @@ Also provide a one-sentence product description.`,
                       <span className="text-sm font-medium text-gray-600">
                         {item.images.length} reference{item.images.length > 1 ? 's' : ''}
                       </span>
+                      {item.uploadMode === 'printed' && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-violet-50 text-violet-600 font-medium">Printed</span>
+                      )}
                       {item.status === 'analyzing' && (
                         <span className="text-[10px] text-blue-500 animate-pulse flex items-center gap-1.5">
                           <Loader2 className="w-3 h-3 animate-spin" /> Analyzing...
@@ -774,6 +884,11 @@ Also provide a one-sentence product description.`,
                       <div key={imgIdx} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-200 group">
                         <img src={img.preview} alt={`Ref ${imgIdx + 1}`} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                        {img.label && (
+                          <div className="absolute bottom-1 left-1">
+                            <span className="text-[7px] uppercase font-semibold bg-white/90 text-gray-600 px-1.5 py-0.5 rounded shadow-sm">{img.label}</span>
+                          </div>
+                        )}
                         {!isGenerating && (
                           <button
                             onClick={() => removePhotoFromItem(item.id, imgIdx)}
