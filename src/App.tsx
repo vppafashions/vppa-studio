@@ -52,6 +52,18 @@ interface ApparelItem {
   heritageImages?: { paletteId: string; paletteLabel: string; view: GeneratedView }[];
   heritageStatus?: 'idle' | 'generating' | 'completed' | 'error';
   heritageProgress?: { current: number; total: number };
+  selectedHermesThemes?: string[];
+  hermesImages?: { themeId: string; themeLabel: string; view: GeneratedView }[];
+  hermesStatus?: 'idle' | 'generating' | 'completed' | 'error';
+  hermesProgress?: { current: number; total: number };
+  selectedBottegaThemes?: string[];
+  bottegaImages?: { themeId: string; themeLabel: string; view: GeneratedView }[];
+  bottegaStatus?: 'idle' | 'generating' | 'completed' | 'error';
+  bottegaProgress?: { current: number; total: number };
+  selectedSaintLaurentThemes?: string[];
+  saintLaurentImages?: { themeId: string; themeLabel: string; view: GeneratedView }[];
+  saintLaurentStatus?: 'idle' | 'generating' | 'completed' | 'error';
+  saintLaurentProgress?: { current: number; total: number };
 }
 
 interface EditorialSetting {
@@ -94,6 +106,63 @@ const HERITAGE_PALETTES: HeritagePalette[] = [
   { id: 'black-onyx-gold', label: 'Black Onyx Gold', mood: 'Dramatic, nocturnal, couture', paletteDescription: 'deep matte onyx black with rich warm undertones, couture-runway drama', monogramDescription: 'bright burnished gold monogram on a matte onyx black backdrop', accentDescription: 'burnished gold for logo and wordmark' },
   { id: 'burnt-terracotta', label: 'Burnt Terracotta', mood: 'Earthen, mediterranean, sun', paletteDescription: 'warm burnt terracotta orange with subtle ochre warmth, sun-baked earth', monogramDescription: 'bronze-copper monogram on a burnt terracotta backdrop', accentDescription: 'bronze copper for logo and wordmark' },
   { id: 'sage-silver', label: 'Sage Silver', mood: 'Herbarium, cool, collected', paletteDescription: 'muted sage green-grey with soft cool undertones, botanical archive feel', monogramDescription: 'brushed silver monogram on a muted sage backdrop', accentDescription: 'brushed silver for logo and wordmark' },
+];
+
+interface HermesTheme {
+  id: string;
+  label: string;
+  mood: string;
+  backgroundDescription: string;
+  backgroundHex: string;
+  illustrationMotif: string;
+  illustrationColor: string;
+}
+
+const HERMES_THEMES: HermesTheme[] = [
+  { id: 'orange-equestrian', label: 'Equestrian Orange', mood: 'Iconic, playful, hand-crafted', backgroundDescription: 'pure iconic Hermes orange, flat warm vermilion fill, no gradient, fully saturated', backgroundHex: '#FF7300', illustrationMotif: 'whimsical hand-drawn galloping horses with flowing manes, riding crops, leather bridles, equestrian stirrups, and curling rope flourishes drawn in loose pen-and-ink style around the garment', illustrationColor: 'rich espresso brown ink' },
+  { id: 'silk-scarf', label: 'Silk Scarf Reverie', mood: 'Whimsical, poetic, hand-drawn', backgroundDescription: 'warm cream off-white reminiscent of vintage paper, slight grainy texture', backgroundHex: '#F5EBD8', illustrationMotif: 'dreamy hand-illustrated marginalia of botanical sprigs, butterflies, sea creatures, acrobatic flower-headed figures, drifting clouds, and cursive curlicues in loose ink-line style around the garment', illustrationColor: 'deep ink black with occasional warm vermilion accents' },
+  { id: 'maritime-blue', label: 'Maritime Blue', mood: 'Nautical, breezy, archival', backgroundDescription: 'soft pale sky-meets-sea blue, a quiet maritime watercolor wash', backgroundHex: '#C8DAE4', illustrationMotif: 'hand-drawn sailing knots, sextants, paper boats, anchors, wave swirls, and dolphins playing in loose ink line around the garment', illustrationColor: 'deep navy ink' },
+  { id: 'meadow-green', label: 'Meadow Green', mood: 'Pastoral, garden, fresh', backgroundDescription: 'soft sage meadow green, slightly chalky like vintage gardening prints', backgroundHex: '#B8C7A8', illustrationMotif: 'hand-drawn flowering vines, butterflies mid-flight, tiny rabbits, leaf garlands, garden trellises, and bumblebees in loose pen line around the garment', illustrationColor: 'deep forest green ink' },
+  { id: 'rose-poudre', label: 'Rose Poudre', mood: 'Tender, romantic, atelier', backgroundDescription: 'soft powder rose blush, the color of vintage millinery silk ribbon', backgroundHex: '#F0D7CE', illustrationMotif: 'hand-drawn ribbons tying bows, single long-stem roses, paper hearts, perfume bottles, lace fans, and powder puffs in loose ink line around the garment', illustrationColor: 'deep oxblood ink' },
+  { id: 'noir-sketch', label: 'Noir Sketch', mood: 'Moody, atelier-night, classical', backgroundDescription: 'dense midnight black with very subtle warm undertone, like aged ink paper', backgroundHex: '#1A1614', illustrationMotif: 'fine hand-drawn fencing foils, opera masks, antique pocket watches, candelabras, plumed pens, and curling smoke wisps in loose white line around the garment', illustrationColor: 'warm cream ivory white ink' },
+];
+
+interface BottegaTheme {
+  id: string;
+  label: string;
+  mood: string;
+  backgroundDescription: string;
+  backgroundHex: string;
+  surfaceDescription: string;
+  craftDetail: string;
+}
+
+const BOTTEGA_THEMES: BottegaTheme[] = [
+  { id: 'parakeet-green', label: 'Parakeet Green', mood: 'Iconic, signature, quiet', backgroundDescription: 'iconic Bottega parakeet green flat fill, deep saturated emerald-leaf green, completely uniform, no gradient', backgroundHex: '#2E5E47', surfaceDescription: 'a smooth pale travertine stone plinth or polished concrete pedestal where the garment rests, casting a single soft natural shadow', craftDetail: 'a tight macro hint of intrecciato woven leather texture (over-under leather strips at 45 degrees) just visible in one corner as a subtle backdrop element' },
+  { id: 'travertine-cream', label: 'Travertine Cream', mood: 'Architectural, calm, raw', backgroundDescription: 'warm travertine stone cream with the very faintest natural mineral mottle, almost imperceptible, otherwise flat and uniform', backgroundHex: '#E8DCC4', surfaceDescription: 'a brushed natural oak wood plinth or honed limestone slab where the garment is placed, casting a single soft shadow', craftDetail: 'a quiet glimpse of natural raw leather hide texture grain on a folded swatch beside the garment, no logos at all' },
+  { id: 'caramel-leather', label: 'Caramel Leather', mood: 'Warm, tactile, archival', backgroundDescription: 'rich warm caramel leather brown flat fill, the color of vintage saddle leather, smooth and uniform', backgroundHex: '#A07254', surfaceDescription: 'a polished walnut wood plinth or aged copper-edged surface where the garment lies, single soft shadow', craftDetail: 'a small folded edge of intrecciato woven leather visible as a tactile detail beside the garment' },
+  { id: 'fondant-rose', label: 'Fondant Rose', mood: 'Tender, restrained, modern', backgroundDescription: 'muted dusty fondant pink, the color of pressed silk satin, completely flat and uniform', backgroundHex: '#D4B5AC', surfaceDescription: 'a smooth pale Carrara marble plinth or matte cream-painted box where the garment is presented', craftDetail: 'a single fold of supple lambskin laid like a ribbon beside the garment, no logos visible' },
+  { id: 'kalk-white', label: 'Kalk White', mood: 'Pure, gallery, weightless', backgroundDescription: 'pure soft chalk white, slight matte texture like fine plaster, completely uniform', backgroundHex: '#F1EEE7', surfaceDescription: 'a slim raw concrete plinth or solid white display block where the garment is placed, casting a clean single shadow', craftDetail: 'a tightly cropped corner of intrecciato woven leather pattern visible at the edge as a tactile texture detail' },
+  { id: 'midnight-suede', label: 'Midnight Suede', mood: 'Nocturnal, hushed, refined', backgroundDescription: 'deep midnight charcoal with subtle suede-like texture, looks like brushed dark suede leather, uniform tone', backgroundHex: '#1F1E1C', surfaceDescription: 'a polished black granite plinth or dark walnut surface where the garment rests, single low shadow', craftDetail: 'a glimpse of woven leather intrecciato pattern softly catching light at the edge of frame' },
+];
+
+interface SaintLaurentTheme {
+  id: string;
+  label: string;
+  mood: string;
+  backgroundDescription: string;
+  backgroundHex: string;
+  lightingDescription: string;
+  poseDirection: string;
+}
+
+const SAINTLAURENT_THEMES: SaintLaurentTheme[] = [
+  { id: 'pure-noir', label: 'Pure Noir', mood: 'Iconic, rock, monochrome', backgroundDescription: 'absolute pure black void with subtle film grain, completely flat and infinite, no gradient, no walls visible', backgroundHex: '#000000', lightingDescription: 'single hard directional spotlight from upper-left at 45 degrees, harsh raking key, deep crushed shadows on the right side, ratio 8:1, almost noir cinema. 5500K neutral white.', poseDirection: 'model stands rigid, hand on hip, chin lifted defiantly, sharp shoulder line, eyes locked on camera through downturned brow' },
+  { id: 'bleached-mono', label: 'Bleached Mono', mood: 'Bleached, contrast, brutalist', backgroundDescription: 'flat bleached white wall with subtle grain, slightly off-white but reads as overexposed bright white', backgroundHex: '#F4F4F0', lightingDescription: 'hard frontal flash light blasting the model with a deep crushed shadow falling onto the wall behind, contrast ratio 5:1, color desaturated to near monochrome', poseDirection: 'model leans back against the wall, one knee bent forward, smoking-pose energy, hands relaxed at sides, jaw set' },
+  { id: 'crushed-shadow', label: 'Crushed Shadow', mood: 'Cinematic, half-light, sensual', backgroundDescription: 'deep crushed charcoal black background with a subtle dark vignette that fades into pure black at the edges', backgroundHex: '#0E0D0C', lightingDescription: 'one slim vertical strip light from camera-right grazes the body, leaving half the model in deep shadow and the other half rim-lit. Strong chiaroscuro. 4500K warm.', poseDirection: 'model in half-shadow profile, head turned to camera over the shoulder, sharp cheekbones lit, body silhouetted' },
+  { id: 'high-flash', label: 'High Flash', mood: 'Paparazzi, raw, fashion-week', backgroundDescription: 'pure dense black background with the slightest motion-blur halo around the subject from camera flash, no walls', backgroundHex: '#050505', lightingDescription: 'direct on-axis camera flash creating a sharp hard-edged shadow halo just outside the silhouette, harsh, slightly overexposed on highlights, 5500K cold flash quality', poseDirection: 'model walks straight at the camera mid-stride, looking down past the lens, attitude-driven, model-off-duty energy' },
+  { id: 'silver-rain', label: 'Silver Rain', mood: 'Wet, glam-rock, glitter', backgroundDescription: 'deep gunmetal grey background with subtle water-droplet sheen specks suggesting rain, almost black, soft vignette', backgroundHex: '#1A1A1D', lightingDescription: 'two hard rim lights from upper-left and upper-right casting twin highlights along the body and water specs, deep central shadow, 4800K cool, very contrast-heavy', poseDirection: 'model stands head-on, arms slightly out, hair slick back as if wet, gaze sharp and direct, slight forward lean' },
+  { id: 'velvet-couture', label: 'Velvet Couture', mood: 'Couture, salon, opera', backgroundDescription: 'deep oxblood velvet drape backdrop, rich deep wine red with subtle pile texture, soft vignette to dark', backgroundHex: '#3A1620', lightingDescription: 'single warm soft key from upper-left with strong falloff to deep shadow, subtle hair light from behind. 3800K very warm tungsten, 6:1 contrast, opera-house mood', poseDirection: 'model seated on a velvet stool in three-quarter view, one arm draped over the seat back, head tilted slightly, sultry editorial gaze' },
 ];
 
 interface PressPalette {
@@ -440,7 +509,10 @@ function StudioApp() {
   const [isGeneratingPress, setIsGeneratingPress] = useState(false);
   const [isGeneratingEditorial, setIsGeneratingEditorial] = useState(false);
   const [isGeneratingHeritage, setIsGeneratingHeritage] = useState(false);
-  const [campaignTab, setCampaignTab] = useState<'scenes' | 'press' | 'editorial' | 'heritage'>('scenes');
+  const [isGeneratingHermes, setIsGeneratingHermes] = useState(false);
+  const [isGeneratingBottega, setIsGeneratingBottega] = useState(false);
+  const [isGeneratingSaintLaurent, setIsGeneratingSaintLaurent] = useState(false);
+  const [campaignTab, setCampaignTab] = useState<'scenes' | 'press' | 'editorial' | 'heritage' | 'hermes' | 'bottega' | 'saintlaurent'>('scenes');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -934,6 +1006,33 @@ Also provide a one-sentence product description.`,
         ? current.filter(p => p !== paletteId)
         : [...current, paletteId];
       return { ...i, selectedHeritagePalettes: next };
+    }));
+  };
+
+  const toggleHermesTheme = (itemId: string, themeId: string) => {
+    setApparelItems(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+      const current = i.selectedHermesThemes || [];
+      const next = current.includes(themeId) ? current.filter(p => p !== themeId) : [...current, themeId];
+      return { ...i, selectedHermesThemes: next };
+    }));
+  };
+
+  const toggleBottegaTheme = (itemId: string, themeId: string) => {
+    setApparelItems(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+      const current = i.selectedBottegaThemes || [];
+      const next = current.includes(themeId) ? current.filter(p => p !== themeId) : [...current, themeId];
+      return { ...i, selectedBottegaThemes: next };
+    }));
+  };
+
+  const toggleSaintLaurentTheme = (itemId: string, themeId: string) => {
+    setApparelItems(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+      const current = i.selectedSaintLaurentThemes || [];
+      const next = current.includes(themeId) ? current.filter(p => p !== themeId) : [...current, themeId];
+      return { ...i, selectedSaintLaurentThemes: next };
     }));
   };
 
@@ -1512,6 +1611,386 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
     }
   };
 
+  const generateHermesImages = async (targetItemId?: string) => {
+    const targets = targetItemId ? apparelItems.filter(i => i.id === targetItemId) : apparelItems;
+    const validTargets = targets.filter(i => (i.selectedHermesThemes || []).length > 0);
+    if (validTargets.length === 0) return;
+
+    setIsGeneratingHermes(true);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      const logoBase64 = logo ? await fileToBase64(logo.file) : null;
+
+      for (const item of validTargets) {
+        const selectedIds = item.selectedHermesThemes || [];
+        const themesToGenerate = HERMES_THEMES.filter(p => selectedIds.includes(p.id));
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          hermesStatus: 'generating',
+          hermesImages: [],
+          hermesProgress: { current: 0, total: themesToGenerate.length }
+        } : i));
+
+        const imageDataParts: { data: string; mimeType: string }[] = [];
+        for (const img of item.images) {
+          const base64 = await fileToBase64(img.file);
+          imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
+        }
+
+        const generated: { themeId: string; themeLabel: string; view: GeneratedView }[] = [];
+
+        for (let pi = 0; pi < themesToGenerate.length; pi++) {
+          const theme = themesToGenerate[pi];
+
+          setApparelItems(prev => prev.map(i => i.id === item.id ? {
+            ...i,
+            hermesProgress: { current: pi, total: themesToGenerate.length }
+          } : i));
+
+          const parts: any[] = imageDataParts.map(img => ({ inlineData: { data: img.data, mimeType: img.mimeType } }));
+          if (logoBase64) parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
+
+          const priceCopy = item.price?.trim() ? `₹${item.price.trim().replace(/^₹\s*/, '')}` : '';
+
+          const hermesPrompt = `You are a Senior Atelier Art Director creating a hand-crafted campaign poster for VPPA Fashions in the spirit of Hermes silk-scarf illustrations and Linda Merad's hand-drawn campaigns. Anti-AI, anti-CGI -- this must feel HAND-DRAWN, analog, and human-made.
+
+FORMAT: 1:1 square.
+
+THEME: "${theme.label}" -- ${theme.mood}.
+
+BACKGROUND:
+- A flat painted background of ${theme.backgroundDescription}.
+- The background fills the entire canvas, no gradient, no vignette.
+- Very subtle paper-grain texture as if printed on heavyweight cotton paper.
+
+HERO SUBJECT:
+- The garment from the reference images is the centerpiece, presented as a clean photographic still life of the apparel itself (NOT worn by a model). Center-weighted on the canvas, occupying roughly 50-60% of the canvas height.
+- The garment can be elegantly laid flat, gently floating, or softly draped on an invisible form. It must look like the EXACT product from the references -- preserve cut, color, print, fabric, drape, stitching, and all distinctive details.
+- A single subtle natural drop shadow underneath grounds the garment.
+
+HAND-DRAWN MARGINALIA (signature Hermes element):
+- Around the garment, scattered loose pen-and-ink illustrations rendered in ${theme.illustrationColor}.
+- Motif: ${theme.illustrationMotif}.
+- All marginalia is visibly HAND-DRAWN with a real pen -- visible line weight variations, slight wobble, organic imperfections, occasional ink blots, NO digital perfection.
+- Drawings are scattered around the four corners and along the sides, framing the garment without crowding it. Each illustration is small to medium scale (5-15% of canvas dimension), playful, and full of life.
+- Style: loose continuous-line ink drawing, occasional cross-hatching for shadow, no fills (line work only), think vintage scientific or fashion-house atelier sketches.
+
+LOGO ONLY:
+- Place the VPPA logo mark only (no wordmark, no extra text), small, in the bottom-right corner at ~7% of canvas width, in the same ${theme.illustrationColor} so it sits as a subtle stamp${logoBase64 ? ' -- use the provided VPPA logo faithfully' : ''}.
+${priceCopy ? `- A small hand-written-style price tag near the garment showing "${priceCopy}" in casual handwritten script style, same ${theme.illustrationColor}, looks like it was added by the atelier.` : ''}
+
+LIGHTING ON THE GARMENT: Soft natural daylight, even shadowless illumination, 5500K, photographic but gentle. The product looks fresh and clean against the painted ground.
+
+COMPOSITION: Garment centered with marginalia framing it. Generous breathing room. Feels like a beautifully designed art print or atelier journal page.
+
+STRICT RULES:
+- NO model, NO mannequin, NO human figure visible -- only the garment and the hand-drawn marginalia.
+- NO additional text other than the small VPPA logo${priceCopy ? ' and the small price tag' : ''}.
+- NO digital sharpness on the marginalia -- they MUST look hand-drawn with real ink.
+- NO additional shadows on the background besides the garment's natural ground shadow.
+
+MOOD REFERENCE: Hermes silk scarves, Linda Merad illustrations, vintage atelier sketchbooks, hand-painted department-store posters from the 1950s.
+
+Reproduce the EXACT apparel from the provided reference images. Output one image only.`;
+
+          parts.push({ text: hermesPrompt });
+
+          try {
+            const response = await genAI.models.generateContent({
+              model: 'gemini-3.1-flash-image-preview',
+              contents: { parts },
+              config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } }
+            });
+
+            let url = '';
+            let desc = '';
+            for (const p of response.candidates?.[0]?.content?.parts || []) {
+              if (p.inlineData) url = `data:image/png;base64,${p.inlineData.data}`;
+              else if (p.text) desc = p.text;
+            }
+
+            if (url) {
+              generated.push({ themeId: theme.id, themeLabel: theme.label, view: { url, type: theme.label, description: desc || `VPPA atelier · ${theme.label}` } });
+              setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, hermesImages: [...generated] } : i));
+            }
+            await sleep(1000);
+          } catch (err) {
+            console.error(`Hermes generation failed for ${theme.label}:`, err);
+          }
+        }
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          hermesStatus: generated.length > 0 ? 'completed' : 'error',
+          hermesProgress: undefined
+        } : i));
+      }
+    } finally {
+      setIsGeneratingHermes(false);
+    }
+  };
+
+  const generateBottegaImages = async (targetItemId?: string) => {
+    const targets = targetItemId ? apparelItems.filter(i => i.id === targetItemId) : apparelItems;
+    const validTargets = targets.filter(i => (i.selectedBottegaThemes || []).length > 0);
+    if (validTargets.length === 0) return;
+
+    setIsGeneratingBottega(true);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      const logoBase64 = logo ? await fileToBase64(logo.file) : null;
+
+      for (const item of validTargets) {
+        const selectedIds = item.selectedBottegaThemes || [];
+        const themesToGenerate = BOTTEGA_THEMES.filter(p => selectedIds.includes(p.id));
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          bottegaStatus: 'generating',
+          bottegaImages: [],
+          bottegaProgress: { current: 0, total: themesToGenerate.length }
+        } : i));
+
+        const imageDataParts: { data: string; mimeType: string }[] = [];
+        for (const img of item.images) {
+          const base64 = await fileToBase64(img.file);
+          imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
+        }
+
+        const modelDescription = selectedGender === 'women'
+          ? "a single young Indian woman, age 22-28, refined natural features, medium-brown skin, undone tousled hair, no visible makeup, gaze quiet and unposed"
+          : "a single young Indian man, age 22-28, natural features, medium-brown skin, slightly tousled hair, gaze quiet and unposed";
+
+        const generated: { themeId: string; themeLabel: string; view: GeneratedView }[] = [];
+
+        for (let pi = 0; pi < themesToGenerate.length; pi++) {
+          const theme = themesToGenerate[pi];
+
+          setApparelItems(prev => prev.map(i => i.id === item.id ? {
+            ...i,
+            bottegaProgress: { current: pi, total: themesToGenerate.length }
+          } : i));
+
+          const parts: any[] = imageDataParts.map(img => ({ inlineData: { data: img.data, mimeType: img.mimeType } }));
+          if (logoBase64) parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
+
+          const priceCopy = item.price?.trim() ? `₹${item.price.trim().replace(/^₹\s*/, '')}` : '';
+
+          const bottegaPrompt = `You are a Senior Quiet-Luxury Art Director creating a campaign image for VPPA Fashions in the spirit of Bottega Veneta and Loro Piana -- the no-logo, craft-first, quiet-luxury aesthetic. The image must be restrained, tactile, and feel like fine craftsmanship.
+
+FORMAT: 1:1 square.
+
+THEME: "${theme.label}" -- ${theme.mood}.
+
+BACKGROUND:
+- A clean painted backdrop of ${theme.backgroundDescription}.
+- Fully uniform background, no gradient, no shadows on the wall except whatever is naturally cast by the model.
+
+SETTING:
+- The scene includes ${theme.surfaceDescription}.
+- ${theme.craftDetail}.
+- Otherwise the frame is bare -- no extra props, no clutter, no architectural detail.
+
+MODEL:
+- ${modelDescription}.
+- Pose: model stands or leans casually, body slightly turned, body language soft and at-ease, almost candid. NOT looking at camera directly -- gaze drifts off-frame.
+- Wearing the EXACT apparel from the reference images -- reproduce the garment faithfully in cut, color, print, drape, fabric, stitching, hardware. Every craft detail must be preserved.
+
+PRODUCT FOCUS:
+- The garment is the hero. Fabric weave, hand-stitching, leather grain, hardware, and intrecciato weave (where present) are visible in tack-sharp detail.
+- Composition is generous with negative space, the garment occupying roughly 35-45% of the frame, never overwhelming.
+
+LIGHTING:
+- Soft natural daylight from a single large diffused source (north-facing window quality), 5500-5800K.
+- Very low contrast, ratio about 1.5:1, almost shadowless. Gentle directionality from camera-left.
+- Light feels expensive, slow, like an atelier on a quiet morning.
+
+COMPOSITION: Off-center model with luxurious negative space. Architectural restraint. Feels like a fine-art still life that happens to include a person.
+
+LOGO ONLY (NO LOUD BRANDING):
+- Place the VPPA logo mark only (no wordmark, no rule lines, no collection labels) at the bottom-right corner, very small at ~5% of canvas width, in a tone-on-tone color barely darker than the background so it sits as a discreet maker's mark${logoBase64 ? ' -- use the provided VPPA logo faithfully' : ''}.
+${priceCopy ? `- A single tiny price line "${priceCopy}" placed directly below the small logo, in the same tone-on-tone color, optical size ~40% of the logo height.` : ''}
+- ABSOLUTELY no text, no wordmark, no slogans anywhere else in the frame.
+
+TECH: Photorealistic, fine-grain medium-format quality, f/4 with creamy soft falloff, microscopic surface texture detail in fabric and leather. No plastic AI smoothing.
+
+STRICT RULES:
+- Quiet luxury energy: restraint above all. NEVER add visible logos to the garment, the surface, or the backdrop.
+- No additional people. No clutter. No outdoor scenes -- always interior atelier mood.
+- The image must feel CALM and CONFIDENT.
+
+MOOD REFERENCE: Bottega Veneta "Craft is our Language" campaign by Jack Davison, Loro Piana lookbooks, The Row campaigns.
+
+Reproduce the EXACT apparel from the provided reference images. Output one image only.`;
+
+          parts.push({ text: bottegaPrompt });
+
+          try {
+            const response = await genAI.models.generateContent({
+              model: 'gemini-3.1-flash-image-preview',
+              contents: { parts },
+              config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } }
+            });
+
+            let url = '';
+            let desc = '';
+            for (const p of response.candidates?.[0]?.content?.parts || []) {
+              if (p.inlineData) url = `data:image/png;base64,${p.inlineData.data}`;
+              else if (p.text) desc = p.text;
+            }
+
+            if (url) {
+              generated.push({ themeId: theme.id, themeLabel: theme.label, view: { url, type: theme.label, description: desc || `VPPA quiet · ${theme.label}` } });
+              setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, bottegaImages: [...generated] } : i));
+            }
+            await sleep(1000);
+          } catch (err) {
+            console.error(`Bottega generation failed for ${theme.label}:`, err);
+          }
+        }
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          bottegaStatus: generated.length > 0 ? 'completed' : 'error',
+          bottegaProgress: undefined
+        } : i));
+      }
+    } finally {
+      setIsGeneratingBottega(false);
+    }
+  };
+
+  const generateSaintLaurentImages = async (targetItemId?: string) => {
+    const targets = targetItemId ? apparelItems.filter(i => i.id === targetItemId) : apparelItems;
+    const validTargets = targets.filter(i => (i.selectedSaintLaurentThemes || []).length > 0);
+    if (validTargets.length === 0) return;
+
+    setIsGeneratingSaintLaurent(true);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      const logoBase64 = logo ? await fileToBase64(logo.file) : null;
+
+      for (const item of validTargets) {
+        const selectedIds = item.selectedSaintLaurentThemes || [];
+        const themesToGenerate = SAINTLAURENT_THEMES.filter(p => selectedIds.includes(p.id));
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          saintLaurentStatus: 'generating',
+          saintLaurentImages: [],
+          saintLaurentProgress: { current: 0, total: themesToGenerate.length }
+        } : i));
+
+        const imageDataParts: { data: string; mimeType: string }[] = [];
+        for (const img of item.images) {
+          const base64 = await fileToBase64(img.file);
+          imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
+        }
+
+        const modelDescription = selectedGender === 'women'
+          ? "a single young Indian woman, age 22-28, sharp angular features, medium-brown skin, slick dark hair, smoky-eye attitude, defiant editorial gaze"
+          : "a single young Indian man, age 22-28, sharp angular features, medium-brown skin, slick dark hair, brooding rock-noir attitude";
+
+        const generated: { themeId: string; themeLabel: string; view: GeneratedView }[] = [];
+
+        for (let pi = 0; pi < themesToGenerate.length; pi++) {
+          const theme = themesToGenerate[pi];
+
+          setApparelItems(prev => prev.map(i => i.id === item.id ? {
+            ...i,
+            saintLaurentProgress: { current: pi, total: themesToGenerate.length }
+          } : i));
+
+          const parts: any[] = imageDataParts.map(img => ({ inlineData: { data: img.data, mimeType: img.mimeType } }));
+          if (logoBase64) parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
+
+          const priceCopy = item.price?.trim() ? `₹${item.price.trim().replace(/^₹\s*/, '')}` : '';
+          const isDarkBg = ['pure-noir', 'crushed-shadow', 'high-flash', 'silver-rain', 'velvet-couture'].includes(theme.id);
+          const logoColor = isDarkBg ? 'pure white' : 'pure black';
+
+          const ysPrompt = `You are a Senior Rock-Noir Art Director creating a high-fashion campaign image for VPPA Fashions in the spirit of Saint Laurent under Hedi Slimane and Anthony Vaccarello -- monochrome, defiant, cinematic, raw. Black-and-white attitude with a single rock-and-roll edge.
+
+FORMAT: 1:1 square.
+
+THEME: "${theme.label}" -- ${theme.mood}.
+
+BACKGROUND: ${theme.backgroundDescription}.
+
+LIGHTING: ${theme.lightingDescription}.
+
+MODEL:
+- ${modelDescription}.
+- Pose direction: ${theme.poseDirection}.
+- Wearing the EXACT apparel from the reference images -- reproduce the garment faithfully in cut, color, print, drape, fabric, hardware, and stitching. Sharp shadows reveal every fold and contour.
+
+PRODUCT FOCUS:
+- The garment is the hero of the image, sharply lit and tightly cropped to maximize impact. Even though the lighting is dramatic, the product silhouette and details remain clearly readable.
+- Composition is tight, often cropped to chest-up or hip-up to emphasize the garment.
+
+COLOR TREATMENT:
+- The image is desaturated to feel almost monochrome. Skin tones still natural but cool. Garment colors are muted but recognizable as the original.
+- Rich deep blacks (true 0,0,0 in shadows) and bright clean highlights. NO mid-grey muddiness.
+
+COMPOSITION: Tight, asymmetric, slightly dangerous energy. Off-center subject. Large negative space of pure background. Fashion-week front-row urgency.
+
+LOGO ONLY (rock-noir minimalism):
+- Place the VPPA logo mark only (no wordmark, no slogans), small at ~6% of canvas width, in the bottom-left corner, in ${logoColor}${logoBase64 ? ' -- use the provided VPPA logo faithfully' : ''}.
+${priceCopy ? `- A single line "${priceCopy}" in clean condensed sans-serif, ${logoColor}, very small (~40% of logo height), placed directly under the logo.` : ''}
+- ABSOLUTELY no text anywhere else in the frame.
+
+TECH: Photorealistic, 35mm film grain, hard edges, deep contrast, shot on a fast prime lens at f/2.8 with subtle motion energy. No plastic skin smoothing -- preserve pores and natural skin texture. Slight halation around bright highlights.
+
+STRICT RULES:
+- Strictly one model, no extras.
+- Strictly monochrome / desaturated -- absolutely no warm sunny mood.
+- The garment must remain the focal hero even with high-contrast shadows.
+- No props beyond what the lighting setup naturally implies.
+
+MOOD REFERENCE: Saint Laurent campaigns by Hedi Slimane, Anthony Vaccarello editorial work, Helmut Newton noir portraits, Glen Luchford Saint Laurent winter campaigns.
+
+Reproduce the EXACT apparel from the provided reference images. Output one image only.`;
+
+          parts.push({ text: ysPrompt });
+
+          try {
+            const response = await genAI.models.generateContent({
+              model: 'gemini-3.1-flash-image-preview',
+              contents: { parts },
+              config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } }
+            });
+
+            let url = '';
+            let desc = '';
+            for (const p of response.candidates?.[0]?.content?.parts || []) {
+              if (p.inlineData) url = `data:image/png;base64,${p.inlineData.data}`;
+              else if (p.text) desc = p.text;
+            }
+
+            if (url) {
+              generated.push({ themeId: theme.id, themeLabel: theme.label, view: { url, type: theme.label, description: desc || `VPPA noir · ${theme.label}` } });
+              setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, saintLaurentImages: [...generated] } : i));
+            }
+            await sleep(1000);
+          } catch (err) {
+            console.error(`SaintLaurent generation failed for ${theme.label}:`, err);
+          }
+        }
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          saintLaurentStatus: generated.length > 0 ? 'completed' : 'error',
+          saintLaurentProgress: undefined
+        } : i));
+      }
+    } finally {
+      setIsGeneratingSaintLaurent(false);
+    }
+  };
+
   const totalViews = apparelItems.reduce((acc, i) => acc + i.views.length, 0);
   const currentViewTypes = getViewTypes(selectedGender);
   const totalExpected = apparelItems.length * currentViewTypes.length;
@@ -1926,6 +2405,9 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
                   {campaignTab === 'press' && 'Luxury press-release key visuals -- 1:1 square, photorealistic product with VPPA monogram watermark'}
                   {campaignTab === 'editorial' && 'Zara / Arket / COS style minimalist lookbook -- effortless, quiet, modern editorial'}
                   {campaignTab === 'heritage' && 'Louis Vuitton / Gucci style heritage campaign -- rich monogram backdrop, cinematic lighting, archival luxury'}
+                  {campaignTab === 'hermes' && 'Hermes atelier style -- product still life on flat painted ground with hand-drawn ink marginalia, anti-AI craft'}
+                  {campaignTab === 'bottega' && 'Bottega Veneta / Loro Piana / The Row quiet luxury -- restraint, craft focus, no loud branding, soft natural light'}
+                  {campaignTab === 'saintlaurent' && 'Saint Laurent rock-noir -- monochrome high-contrast cinema, hard light, defiant attitude'}
                 </p>
               </div>
               {(() => {
@@ -1965,14 +2447,50 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
                     </button>
                   );
                 }
-                const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedHeritagePalettes?.length || 0), 0);
+                if (campaignTab === 'heritage') {
+                  const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedHeritagePalettes?.length || 0), 0);
+                  return (
+                    <button
+                      onClick={() => generateHeritageImages()}
+                      disabled={totalSelected === 0 || isGeneratingHeritage || isGenerating}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-yellow-700 to-amber-700 hover:from-yellow-800 hover:to-amber-800 text-white shadow-md shadow-yellow-700/20"
+                    >
+                      {isGeneratingHeritage ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
+                    </button>
+                  );
+                }
+                if (campaignTab === 'hermes') {
+                  const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedHermesThemes?.length || 0), 0);
+                  return (
+                    <button
+                      onClick={() => generateHermesImages()}
+                      disabled={totalSelected === 0 || isGeneratingHermes || isGenerating}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-md shadow-orange-500/20"
+                    >
+                      {isGeneratingHermes ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
+                    </button>
+                  );
+                }
+                if (campaignTab === 'bottega') {
+                  const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedBottegaThemes?.length || 0), 0);
+                  return (
+                    <button
+                      onClick={() => generateBottegaImages()}
+                      disabled={totalSelected === 0 || isGeneratingBottega || isGenerating}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white shadow-md shadow-emerald-700/20"
+                    >
+                      {isGeneratingBottega ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
+                    </button>
+                  );
+                }
+                const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedSaintLaurentThemes?.length || 0), 0);
                 return (
                   <button
-                    onClick={() => generateHeritageImages()}
-                    disabled={totalSelected === 0 || isGeneratingHeritage || isGenerating}
-                    className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-yellow-700 to-amber-700 hover:from-yellow-800 hover:to-amber-800 text-white shadow-md shadow-yellow-700/20"
+                    onClick={() => generateSaintLaurentImages()}
+                    disabled={totalSelected === 0 || isGeneratingSaintLaurent || isGenerating}
+                    className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-black to-gray-800 hover:from-black hover:to-gray-900 text-white shadow-md shadow-gray-900/30"
                   >
-                    {isGeneratingHeritage ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
+                    {isGeneratingSaintLaurent ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
                   </button>
                 );
               })()}
@@ -2019,6 +2537,36 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
                 <Zap className="w-3.5 h-3.5" />
                 Heritage Luxury
                 <span className="text-[9px] text-gray-400 font-normal">LV / Gucci</span>
+              </button>
+              <button
+                onClick={() => setCampaignTab('hermes')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'hermes' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Atelier Hand-Drawn
+                <span className="text-[9px] text-gray-400 font-normal">Hermes</span>
+              </button>
+              <button
+                onClick={() => setCampaignTab('bottega')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'bottega' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Quiet Luxury
+                <span className="text-[9px] text-gray-400 font-normal">Bottega / Loro Piana</span>
+              </button>
+              <button
+                onClick={() => setCampaignTab('saintlaurent')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'saintlaurent' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                Rock Noir
+                <span className="text-[9px] text-gray-400 font-normal">Saint Laurent</span>
               </button>
             </div>
 
@@ -2708,6 +3256,480 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
                                   }`}>
                                     {palette.label}
                                   </p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+
+            {campaignTab === 'hermes' && (
+            <div className="space-y-6">
+              {apparelItems.map((item) => {
+                const selectedThemes = item.selectedHermesThemes || [];
+                const hasSelection = selectedThemes.length > 0;
+                const isItemGenerating = item.hermesStatus === 'generating';
+                const hermesImages = item.hermesImages || [];
+                return (
+                  <div key={`hermes-${item.id}`} className="glass rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                      <img src={item.images[0].preview} alt="ref" className="w-11 h-11 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 truncate">Atelier Hand-Drawn</span>
+                          {item.uploadMode === 'printed' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">Printed</span>
+                          )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedThemes.length} selected</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · Hermes silk-scarf hand-drawn aesthetic · logo only</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => generateHermesImages(item.id)}
+                          disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingHermes}
+                          className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-sm"
+                        >
+                          {isItemGenerating ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" />{item.hermesProgress ? `${item.hermesProgress.current + 1}/${item.hermesProgress.total}` : 'Creating'}</>
+                          ) : (
+                            <><Sparkles className="w-3.5 h-3.5" />Generate {hasSelection ? `(${selectedThemes.length})` : ''}</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Select Atelier Themes (multiple)</label>
+                        <div className="flex gap-2 text-[10px]">
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedHermesThemes: HERMES_THEMES.map(p => p.id) } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Select all
+                          </button>
+                          <span className="text-gray-200">·</span>
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedHermesThemes: [] } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                        {HERMES_THEMES.map(theme => {
+                          const isSelected = selectedThemes.includes(theme.id);
+                          return (
+                            <button
+                              key={theme.id}
+                              onClick={() => toggleHermesTheme(item.id, theme.id)}
+                              disabled={isItemGenerating}
+                              className={`p-2 rounded-lg transition-all duration-200 border disabled:opacity-50 text-left ${
+                                isSelected ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'
+                              }`}
+                            >
+                              <div className="w-full aspect-square rounded-md mb-1.5 border" style={{ backgroundColor: theme.backgroundHex, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }} />
+                              <p className="text-[10px] font-semibold truncate">{theme.label}</p>
+                              <p className={`text-[8px] truncate ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{theme.mood}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      {hermesImages.length === 0 && !isItemGenerating ? (
+                        <div className="py-10 flex flex-col items-center justify-center gap-2 text-center">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <p className="text-xs text-gray-400">Select one or more atelier themes, then hit Generate</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {(() => {
+                            const selectedDefs = HERMES_THEMES.filter(p => selectedThemes.includes(p.id));
+                            const total = isItemGenerating && item.hermesProgress ? item.hermesProgress.total : selectedDefs.length;
+                            const currentIdx = item.hermesProgress?.current ?? -1;
+                            return selectedDefs.slice(0, Math.max(total, hermesImages.length)).map((theme, idx) => {
+                              const generated = hermesImages.find(c => c.themeId === theme.id);
+                              const isCurrent = isItemGenerating && idx === currentIdx;
+                              const isWaiting = isItemGenerating && idx > currentIdx && !generated;
+                              return (
+                                <div key={theme.id} className="group">
+                                  <div className={`aspect-square rounded-xl overflow-hidden relative border transition-all ${
+                                    generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100 bg-gray-50/50'
+                                  } ${isCurrent ? 'ring-1 ring-orange-400' : ''}`}>
+                                    {generated ? (
+                                      <>
+                                        <img src={generated.view.url} alt={theme.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-2">
+                                          <button
+                                            onClick={() => downloadImage(generated.view.url, `VPPA_Atelier_${theme.id}_${item.id}.png`)}
+                                            className="w-full py-1.5 rounded-lg bg-white text-gray-700 text-[9px] font-semibold flex items-center justify-center gap-1 hover:bg-gray-50 shadow-sm"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            Save
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : isCurrent ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                                        <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+                                        <div className="w-8 h-0.5 rounded-full bg-orange-100 overflow-hidden">
+                                          <div className="h-full bg-orange-500 rounded-full shimmer" style={{ width: '60%' }} />
+                                        </div>
+                                      </div>
+                                    ) : isWaiting ? (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 animate-pulse" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                                          <ImageIcon className="w-3 h-3 text-gray-300" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
+                                    generated ? 'text-gray-500' : isCurrent ? 'text-orange-600' : 'text-gray-300'
+                                  }`}>{theme.label}</p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+
+            {campaignTab === 'bottega' && (
+            <div className="space-y-6">
+              {apparelItems.map((item) => {
+                const selectedThemes = item.selectedBottegaThemes || [];
+                const hasSelection = selectedThemes.length > 0;
+                const isItemGenerating = item.bottegaStatus === 'generating';
+                const bottegaImages = item.bottegaImages || [];
+                return (
+                  <div key={`bottega-${item.id}`} className="glass rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                      <img src={item.images[0].preview} alt="ref" className="w-11 h-11 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 truncate">Quiet Luxury</span>
+                          {item.uploadMode === 'printed' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">Printed</span>
+                          )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedThemes.length} selected</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · Bottega / Loro Piana / The Row · logo only, restraint</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => generateBottegaImages(item.id)}
+                          disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingBottega}
+                          className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-800 hover:to-green-800 text-white shadow-sm"
+                        >
+                          {isItemGenerating ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" />{item.bottegaProgress ? `${item.bottegaProgress.current + 1}/${item.bottegaProgress.total}` : 'Creating'}</>
+                          ) : (
+                            <><Sparkles className="w-3.5 h-3.5" />Generate {hasSelection ? `(${selectedThemes.length})` : ''}</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Select Backdrops (multiple)</label>
+                        <div className="flex gap-2 text-[10px]">
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedBottegaThemes: BOTTEGA_THEMES.map(p => p.id) } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Select all
+                          </button>
+                          <span className="text-gray-200">·</span>
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedBottegaThemes: [] } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                        {BOTTEGA_THEMES.map(theme => {
+                          const isSelected = selectedThemes.includes(theme.id);
+                          return (
+                            <button
+                              key={theme.id}
+                              onClick={() => toggleBottegaTheme(item.id, theme.id)}
+                              disabled={isItemGenerating}
+                              className={`p-2 rounded-lg transition-all duration-200 border disabled:opacity-50 text-left ${
+                                isSelected ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'
+                              }`}
+                            >
+                              <div className="w-full aspect-square rounded-md mb-1.5 border" style={{ backgroundColor: theme.backgroundHex, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }} />
+                              <p className="text-[10px] font-semibold truncate">{theme.label}</p>
+                              <p className={`text-[8px] truncate ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{theme.mood}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      {bottegaImages.length === 0 && !isItemGenerating ? (
+                        <div className="py-10 flex flex-col items-center justify-center gap-2 text-center">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <Layers className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <p className="text-xs text-gray-400">Select one or more backdrops, then hit Generate</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {(() => {
+                            const selectedDefs = BOTTEGA_THEMES.filter(p => selectedThemes.includes(p.id));
+                            const total = isItemGenerating && item.bottegaProgress ? item.bottegaProgress.total : selectedDefs.length;
+                            const currentIdx = item.bottegaProgress?.current ?? -1;
+                            return selectedDefs.slice(0, Math.max(total, bottegaImages.length)).map((theme, idx) => {
+                              const generated = bottegaImages.find(c => c.themeId === theme.id);
+                              const isCurrent = isItemGenerating && idx === currentIdx;
+                              const isWaiting = isItemGenerating && idx > currentIdx && !generated;
+                              return (
+                                <div key={theme.id} className="group">
+                                  <div className={`aspect-square rounded-xl overflow-hidden relative border transition-all ${
+                                    generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100 bg-gray-50/50'
+                                  } ${isCurrent ? 'ring-1 ring-emerald-400' : ''}`}>
+                                    {generated ? (
+                                      <>
+                                        <img src={generated.view.url} alt={theme.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-2">
+                                          <button
+                                            onClick={() => downloadImage(generated.view.url, `VPPA_Quiet_${theme.id}_${item.id}.png`)}
+                                            className="w-full py-1.5 rounded-lg bg-white text-gray-700 text-[9px] font-semibold flex items-center justify-center gap-1 hover:bg-gray-50 shadow-sm"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            Save
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : isCurrent ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                                        <Loader2 className="w-5 h-5 animate-spin text-emerald-700" />
+                                        <div className="w-8 h-0.5 rounded-full bg-emerald-100 overflow-hidden">
+                                          <div className="h-full bg-emerald-500 rounded-full shimmer" style={{ width: '60%' }} />
+                                        </div>
+                                      </div>
+                                    ) : isWaiting ? (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 animate-pulse" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                                          <ImageIcon className="w-3 h-3 text-gray-300" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
+                                    generated ? 'text-gray-500' : isCurrent ? 'text-emerald-700' : 'text-gray-300'
+                                  }`}>{theme.label}</p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+
+            {campaignTab === 'saintlaurent' && (
+            <div className="space-y-6">
+              {apparelItems.map((item) => {
+                const selectedThemes = item.selectedSaintLaurentThemes || [];
+                const hasSelection = selectedThemes.length > 0;
+                const isItemGenerating = item.saintLaurentStatus === 'generating';
+                const slImages = item.saintLaurentImages || [];
+                return (
+                  <div key={`sl-${item.id}`} className="glass rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                      <img src={item.images[0].preview} alt="ref" className="w-11 h-11 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 truncate">Rock Noir</span>
+                          {item.uploadMode === 'printed' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">Printed</span>
+                          )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedThemes.length} selected</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · Saint Laurent monochrome cinema · logo only</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-gray-700 focus-within:ring-2 focus-within:ring-gray-200 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => generateSaintLaurentImages(item.id)}
+                          disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingSaintLaurent}
+                          className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-black to-gray-800 hover:from-black hover:to-gray-900 text-white shadow-sm"
+                        >
+                          {isItemGenerating ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" />{item.saintLaurentProgress ? `${item.saintLaurentProgress.current + 1}/${item.saintLaurentProgress.total}` : 'Creating'}</>
+                          ) : (
+                            <><Sparkles className="w-3.5 h-3.5" />Generate {hasSelection ? `(${selectedThemes.length})` : ''}</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Select Noir Themes (multiple)</label>
+                        <div className="flex gap-2 text-[10px]">
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedSaintLaurentThemes: SAINTLAURENT_THEMES.map(p => p.id) } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Select all
+                          </button>
+                          <span className="text-gray-200">·</span>
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedSaintLaurentThemes: [] } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                        {SAINTLAURENT_THEMES.map(theme => {
+                          const isSelected = selectedThemes.includes(theme.id);
+                          return (
+                            <button
+                              key={theme.id}
+                              onClick={() => toggleSaintLaurentTheme(item.id, theme.id)}
+                              disabled={isItemGenerating}
+                              className={`p-2 rounded-lg transition-all duration-200 border disabled:opacity-50 text-left ${
+                                isSelected ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-700'
+                              }`}
+                            >
+                              <div className="w-full aspect-square rounded-md mb-1.5 border" style={{ backgroundColor: theme.backgroundHex, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }} />
+                              <p className="text-[10px] font-semibold truncate">{theme.label}</p>
+                              <p className={`text-[8px] truncate ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{theme.mood}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      {slImages.length === 0 && !isItemGenerating ? (
+                        <div className="py-10 flex flex-col items-center justify-center gap-2 text-center">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <p className="text-xs text-gray-400">Select one or more noir themes, then hit Generate</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {(() => {
+                            const selectedDefs = SAINTLAURENT_THEMES.filter(p => selectedThemes.includes(p.id));
+                            const total = isItemGenerating && item.saintLaurentProgress ? item.saintLaurentProgress.total : selectedDefs.length;
+                            const currentIdx = item.saintLaurentProgress?.current ?? -1;
+                            return selectedDefs.slice(0, Math.max(total, slImages.length)).map((theme, idx) => {
+                              const generated = slImages.find(c => c.themeId === theme.id);
+                              const isCurrent = isItemGenerating && idx === currentIdx;
+                              const isWaiting = isItemGenerating && idx > currentIdx && !generated;
+                              return (
+                                <div key={theme.id} className="group">
+                                  <div className={`aspect-square rounded-xl overflow-hidden relative border transition-all ${
+                                    generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100 bg-gray-50/50'
+                                  } ${isCurrent ? 'ring-1 ring-gray-700' : ''}`}>
+                                    {generated ? (
+                                      <>
+                                        <img src={generated.view.url} alt={theme.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-2">
+                                          <button
+                                            onClick={() => downloadImage(generated.view.url, `VPPA_Noir_${theme.id}_${item.id}.png`)}
+                                            className="w-full py-1.5 rounded-lg bg-white text-gray-700 text-[9px] font-semibold flex items-center justify-center gap-1 hover:bg-gray-50 shadow-sm"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            Save
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : isCurrent ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                                        <Loader2 className="w-5 h-5 animate-spin text-gray-800" />
+                                        <div className="w-8 h-0.5 rounded-full bg-gray-200 overflow-hidden">
+                                          <div className="h-full bg-gray-800 rounded-full shimmer" style={{ width: '60%' }} />
+                                        </div>
+                                      </div>
+                                    ) : isWaiting ? (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 animate-pulse" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                                          <ImageIcon className="w-3 h-3 text-gray-300" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
+                                    generated ? 'text-gray-500' : isCurrent ? 'text-gray-800' : 'text-gray-300'
+                                  }`}>{theme.label}</p>
                                 </div>
                               );
                             });
