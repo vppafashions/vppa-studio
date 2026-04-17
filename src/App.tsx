@@ -11,6 +11,34 @@ import { motion, AnimatePresence } from 'motion/react';
 // Initialize Gemini API
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
+// Image generation model.
+// NOTE: gemini-3.1-flash-image-preview (Nano Banana 2) requires a paid billing tier.
+// Free-tier accounts get 429 RESOURCE_EXHAUSTED with limit:0 on that model.
+// gemini-2.5-flash-image works on the free tier.
+const IMAGE_MODEL = 'gemini-2.5-flash-image';
+const ANALYSIS_MODEL = 'gemini-3-flash-preview';
+
+// Helper: call generateContent with automatic retry on 429 (rate limit) errors.
+async function callImageGenWithRetry(params: any, maxRetries = 3): Promise<any> {
+  let lastErr: any = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await genAI.models.generateContent(params);
+    } catch (err: any) {
+      lastErr = err;
+      const msg = typeof err?.message === 'string' ? err.message : JSON.stringify(err || {});
+      const is429 = msg.includes('RESOURCE_EXHAUSTED') || msg.includes('"code":429') || msg.includes(' 429');
+      const isLimitZero = msg.includes('limit: 0') || msg.includes('limit":0');
+      if (!is429 || isLimitZero || attempt === maxRetries) throw err;
+      const retryMatch = msg.match(/retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
+      const delaySec = retryMatch ? parseFloat(retryMatch[1]) : Math.pow(2, attempt);
+      const delayMs = Math.min(60000, Math.max(1000, delaySec * 1000));
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr;
+}
+
 type UploadMode = 'standard' | 'printed';
 
 interface ReferenceImage {
@@ -513,6 +541,25 @@ function StudioApp() {
   const [isGeneratingBottega, setIsGeneratingBottega] = useState(false);
   const [isGeneratingSaintLaurent, setIsGeneratingSaintLaurent] = useState(false);
   const [campaignTab, setCampaignTab] = useState<'scenes' | 'press' | 'editorial' | 'heritage' | 'hermes' | 'bottega' | 'saintlaurent'>('scenes');
+  const [toast, setToast] = useState<{ kind: 'error' | 'info'; message: string } | null>(null);
+
+  const showToast = (kind: 'error' | 'info', message: string) => {
+    setToast({ kind, message });
+    setTimeout(() => setToast(prev => prev?.message === message ? null : prev), 7000);
+  };
+
+  const describeError = (err: any): string => {
+    const msg = typeof err?.message === 'string' ? err.message : '';
+    if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('"code":429')) {
+      if (msg.includes('limit: 0') || msg.includes('limit":0')) {
+        return 'The image model is not available on the free tier. Enable billing at ai.google.dev or switch to a free-tier model.';
+      }
+      return 'Rate limit hit. Slow down batch size or wait a minute before retrying.';
+    }
+    if (msg.includes('API key') || msg.includes('API_KEY')) return 'Invalid or missing GEMINI_API_KEY. Check .env and rebuild.';
+    if (msg.includes('SAFETY') || msg.includes('blocked')) return 'Prompt was blocked by safety filters. Try a different theme.';
+    return msg.slice(0, 200) || 'Image generation failed. Check browser console for details.';
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -916,7 +963,7 @@ Also provide a one-sentence product description.`,
 
           try {
             const response = await callWithRetry(() => genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+              model: IMAGE_MODEL,
               contents: { parts },
               config: {
                 imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
@@ -1147,8 +1194,8 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
           parts.push({ text: campaignPrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: {
                 imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
@@ -1177,6 +1224,7 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
             await sleep(1000);
           } catch (err) {
             console.error(`Campaign generation failed for ${scene.label}:`, err);
+            showToast('error', `${scene.label}: ${describeError(err)}`);
           }
         }
 
@@ -1293,8 +1341,8 @@ Reproduce the EXACT apparel from the provided reference images with full materia
           parts.push({ text: pressPrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: {
                 imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
@@ -1323,6 +1371,7 @@ Reproduce the EXACT apparel from the provided reference images with full materia
             await sleep(1000);
           } catch (err) {
             console.error(`Press generation failed for ${palette.label}:`, err);
+            showToast('error', `${palette.label}: ${describeError(err)}`);
           }
         }
 
@@ -1417,8 +1466,8 @@ MOOD REFERENCE: Zara SS/AW Studio campaigns, Massimo Dutti lookbook, Arket ensem
           parts.push({ text: editorialPrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: {
                 imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
@@ -1447,6 +1496,7 @@ MOOD REFERENCE: Zara SS/AW Studio campaigns, Massimo Dutti lookbook, Arket ensem
             await sleep(1000);
           } catch (err) {
             console.error(`Editorial generation failed for ${setting.label}:`, err);
+            showToast('error', `${setting.label}: ${describeError(err)}`);
           }
         }
 
@@ -1567,8 +1617,8 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
           parts.push({ text: heritagePrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: {
                 imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
@@ -1597,6 +1647,7 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
             await sleep(1000);
           } catch (err) {
             console.error(`Heritage generation failed for ${palette.label}:`, err);
+            showToast('error', `${palette.label}: ${describeError(err)}`);
           }
         }
 
@@ -1698,8 +1749,8 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
           parts.push({ text: hermesPrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } }
             });
@@ -1718,6 +1769,7 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
             await sleep(1000);
           } catch (err) {
             console.error(`Hermes generation failed for ${theme.label}:`, err);
+            showToast('error', `${theme.label}: ${describeError(err)}`);
           }
         }
 
@@ -1829,8 +1881,8 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
           parts.push({ text: bottegaPrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } }
             });
@@ -1849,6 +1901,7 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
             await sleep(1000);
           } catch (err) {
             console.error(`Bottega generation failed for ${theme.label}:`, err);
+            showToast('error', `${theme.label}: ${describeError(err)}`);
           }
         }
 
@@ -1957,8 +2010,8 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
           parts.push({ text: ysPrompt });
 
           try {
-            const response = await genAI.models.generateContent({
-              model: 'gemini-3.1-flash-image-preview',
+            const response = await callImageGenWithRetry({
+              model: IMAGE_MODEL,
               contents: { parts },
               config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } }
             });
@@ -1977,6 +2030,7 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
             await sleep(1000);
           } catch (err) {
             console.error(`SaintLaurent generation failed for ${theme.label}:`, err);
+            showToast('error', `${theme.label}: ${describeError(err)}`);
           }
         }
 
@@ -3745,6 +3799,36 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
           </motion.section>
         )}
       </main>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 right-6 z-[100] max-w-md"
+          >
+            <div className={`rounded-2xl shadow-2xl px-5 py-4 flex items-start gap-3 border backdrop-blur-xl ${
+              toast.kind === 'error'
+                ? 'bg-red-50/95 border-red-200 text-red-800'
+                : 'bg-indigo-50/95 border-indigo-200 text-indigo-800'
+            }`}>
+              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold mb-0.5">{toast.kind === 'error' ? 'Generation failed' : 'Heads up'}</p>
+                <p className="text-xs leading-relaxed break-words">{toast.message}</p>
+              </div>
+              <button
+                onClick={() => setToast(null)}
+                className="p-1 rounded-md hover:bg-black/5 transition-colors flex-shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
