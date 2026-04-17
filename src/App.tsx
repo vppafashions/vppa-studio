@@ -35,6 +35,7 @@ interface ApparelItem {
   generatedStyleId?: string;
   uploadMode: UploadMode;
   heroColor?: string;
+  price?: string;
   selectedCampaignObjects?: string[];
   campaignImages?: { objectId: string; objectLabel: string; view: GeneratedView }[];
   campaignStatus?: 'idle' | 'generating' | 'completed' | 'error';
@@ -955,6 +956,7 @@ UNIVERSAL SUPPORTING ELEMENTS (always included):
 - 2-4 curved speed/motion lines tapered at the ends, radiating from the hero element or the model's most active body part; some cross behind the model and some in front for depth.
 - A ground-line effect at the base of the scene using the scene-specific supporting elements where possible.
 - 1-2 loose organic white squiggles floating near the model's torso for visual rhythm.
+${item.price?.trim() ? `- PRICE TAG: In the bottom-right corner (or a clean safe zone), add a small hand-drawn white ticket/price tag illustration containing the price "₹${item.price.trim().replace(/^₹\\s*/, '')}". The rupee symbol (₹) MUST be clearly legible and properly drawn. The tag looks like a small white brush-pen drawn ribbon or rectangular label with a clean sans-serif price inside, sized so the text is readable but the tag occupies under 10% of canvas.` : ''}
 
 LIGHTING ON THE MODEL:
 - Studio strobe, high-key, even and clean, 5500K neutral. No dramatic shadows on the model. Soft contact shadow at the feet at about 15% opacity.
@@ -1064,9 +1066,10 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
             parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
           }
 
-          const pressPrompt = `You are a Senior Luxury Fashion Art Director and Studio Photographer for VPPA Fashions, specializing in high-end press imagery, flagship campaign key visuals, and mobile-first brand content. Produce a single 9:16 vertical key visual that could sit inside an official VPPA press kit or flagship e-commerce hero slot. Mood reference: Louis Vuitton, Bottega Veneta, and Celine official campaign and e-commerce photography standards.
+          const priceCopy = item.price?.trim() ? `₹${item.price.trim().replace(/^₹\s*/, '')}` : '';
+          const pressPrompt = `You are a Senior Luxury Fashion Art Director and Studio Photographer for VPPA Fashions, specializing in high-end press imagery, flagship campaign key visuals, and e-commerce hero content. Produce a single 1:1 square key visual that could sit inside an official VPPA press kit or flagship e-commerce hero slot. Mood reference: Louis Vuitton, Bottega Veneta, and Celine official campaign and e-commerce photography standards.
 
-FORMAT: Vertical 9:16 aspect ratio.
+FORMAT: 1:1 square aspect ratio.
 
 BACKGROUND (Canvas):
 - Single flat uniform field of ${palette.backgroundDescription}. Target tone approximately ${palette.backgroundHex}.
@@ -1098,8 +1101,9 @@ LIGHTING:
 - Global illumination enabled for subtle inter-reflections between product surfaces.
 
 BOTTOM FINISHING:
-- A thin 1px horizontal rule line in ${palette.accentDescription}, 80% of canvas width, centered horizontally, placed roughly 8% from the bottom edge.
-- Below the rule line, a single line of micro-copy in clean sans-serif, small-caps, minimal tracking, accent color: "vppa fashions ${palette.mood.toLowerCase().split(',')[0].trim()} collection". Subtle, understated, lowercase except the wordmark style.
+- A thin 1px horizontal rule line in ${palette.accentDescription}, 80% of canvas width, centered horizontally, placed roughly 10% from the bottom edge.
+- Below the rule line, a single centered line of micro-copy in clean sans-serif, small-caps, minimal tracking, accent color: "vppa fashions ${palette.mood.toLowerCase().split(',')[0].trim()} collection". Subtle, understated.
+${priceCopy ? `- PRICE DISPLAY: Below the collection label, add one more line centered with the price "${priceCopy}" rendered in the same sans-serif small-caps style as the label, same accent color, roughly the same size. The rupee symbol (₹) MUST be clearly legible and properly drawn. Keep spacing clean and editorial.` : ''}
 - No other text anywhere in the composition.
 
 TECH RULES:
@@ -1120,7 +1124,7 @@ Reproduce the EXACT apparel from the provided reference images with full materia
               model: 'gemini-3.1-flash-image-preview',
               contents: { parts },
               config: {
-                imageConfig: { aspectRatio: "9:16", imageSize: "1K" }
+                imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
               }
             });
 
@@ -1572,7 +1576,7 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                 <p className="text-sm text-gray-400">
                   {campaignTab === 'scenes'
                     ? 'Mixed-media campaign scenes -- pick one or many moods, hit generate, and get a poster for every scene'
-                    : 'Luxury press-release key visuals -- 9:16 vertical, photorealistic product with VPPA monogram watermark'}
+                    : 'Luxury press-release key visuals -- 1:1 square, photorealistic product with VPPA monogram watermark'}
                 </p>
               </div>
               {(() => {
@@ -1646,7 +1650,7 @@ Reproduce the EXACT apparel from the provided reference images with full materia
               >
                 <ImageIcon className="w-3.5 h-3.5" />
                 Press Release
-                <span className="text-[9px] text-gray-400 font-normal">9:16</span>
+                <span className="text-[9px] text-gray-400 font-normal">1:1</span>
               </button>
             </div>
 
@@ -1674,6 +1678,17 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                         <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-fuchsia-300 focus-within:ring-2 focus-within:ring-fuchsia-100 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
                         <input
                           type="color"
                           value={hero}
@@ -1835,25 +1850,38 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                           )}
                           <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedPalettes.length} selected</span>
                         </div>
-                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · 9:16 vertical</p>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · 1:1 square</p>
                       </div>
-                      <button
-                        onClick={() => generatePressImages(item.id)}
-                        disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingPress}
-                        className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm"
-                      >
-                        {isItemGenerating ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            {item.pressProgress ? `${item.pressProgress.current + 1}/${item.pressProgress.total}` : 'Creating'}
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Generate {hasSelection ? `(${selectedPalettes.length})` : ''}
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-amber-300 focus-within:ring-2 focus-within:ring-amber-100 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => generatePressImages(item.id)}
+                          disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingPress}
+                          className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm"
+                        >
+                          {isItemGenerating ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              {item.pressProgress ? `${item.pressProgress.current + 1}/${item.pressProgress.total}` : 'Creating'}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              Generate {hasSelection ? `(${selectedPalettes.length})` : ''}
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Palette Selection */}
@@ -1890,7 +1918,7 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                                   : 'bg-white text-gray-600 border-gray-200 hover:border-amber-200'
                               }`}
                             >
-                              <div className="w-full aspect-[9/16] rounded-md mb-1.5 border" style={{ backgroundColor: palette.backgroundHex, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }} />
+                              <div className="w-full aspect-square rounded-md mb-1.5 border" style={{ backgroundColor: palette.backgroundHex, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }} />
                               <p className="text-[10px] font-semibold truncate">{palette.label}</p>
                               <p className={`text-[8px] truncate ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{palette.mood}</p>
                             </button>
@@ -1920,7 +1948,7 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                               const isWaiting = isItemGenerating && idx > currentIdx && !generated;
                               return (
                                 <div key={palette.id} className="group">
-                                  <div className={`aspect-[9/16] rounded-xl overflow-hidden relative border transition-all ${
+                                  <div className={`aspect-square rounded-xl overflow-hidden relative border transition-all ${
                                     generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100'
                                   } ${isCurrent ? 'ring-1 ring-amber-300' : ''}`} style={{ backgroundColor: generated ? 'transparent' : palette.backgroundHex }}>
                                     {generated ? (
