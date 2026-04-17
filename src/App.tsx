@@ -44,7 +44,57 @@ interface ApparelItem {
   pressImages?: { paletteId: string; paletteLabel: string; view: GeneratedView }[];
   pressStatus?: 'idle' | 'generating' | 'completed' | 'error';
   pressProgress?: { current: number; total: number };
+  selectedEditorialSettings?: string[];
+  editorialImages?: { settingId: string; settingLabel: string; view: GeneratedView }[];
+  editorialStatus?: 'idle' | 'generating' | 'completed' | 'error';
+  editorialProgress?: { current: number; total: number };
+  selectedHeritagePalettes?: string[];
+  heritageImages?: { paletteId: string; paletteLabel: string; view: GeneratedView }[];
+  heritageStatus?: 'idle' | 'generating' | 'completed' | 'error';
+  heritageProgress?: { current: number; total: number };
 }
+
+interface EditorialSetting {
+  id: string;
+  label: string;
+  mood: string;
+  location: string;
+  pose: string;
+  lighting: string;
+}
+
+const EDITORIAL_SETTINGS: EditorialSetting[] = [
+  { id: 'concrete-stairs', label: 'Concrete Stairs', mood: 'Architectural, calm', location: 'a wide shallow concrete staircase with raw texture, industrial minimalism, no railings', pose: 'model stands casually on one of the steps, hand lightly on a hip, gaze off to the side', lighting: 'soft overcast daylight from above, no direct sun, even shadowless diffusion' },
+  { id: 'white-corner', label: 'White Corner', mood: 'Clean, quiet, studio', location: 'an empty off-white painted studio corner where two walls meet, subtle shadow line in the crease', pose: 'model leans one shoulder into the wall corner, one leg crossed, head turned slightly', lighting: 'large diffused softbox window light from the left, 5500K, very low contrast' },
+  { id: 'arched-doorway', label: 'Arched Doorway', mood: 'Mediterranean, elegant', location: 'a tall white stucco arched doorway viewed from outside, textured plaster walls, tiled threshold', pose: 'model stands under the arch, one hand on the frame, profile angle to the camera', lighting: 'bright natural sunlight spilling across the plaster, soft bounce fill, warm 5200K' },
+  { id: 'window-light', label: 'Window Light', mood: 'Intimate, serene', location: 'a tall minimal window with sheer linen curtain, plain wall behind, soft wood floor', pose: 'model stands three-quarter facing the window, eyes closed, chin lifted slightly, hands loose', lighting: 'soft backlight and sidelight through the sheer curtain, 5500K, natural falloff' },
+  { id: 'marble-hallway', label: 'Marble Hallway', mood: 'Gallery, refined, quiet', location: 'a long minimal marble hallway with columns receding, polished stone floor, no decoration', pose: 'model walks forward mid-stride, one foot lifted, looking straight ahead, hands by sides', lighting: 'cool museum lighting from ceiling fixtures, neutral 6000K, very diffused' },
+  { id: 'brutalist-wall', label: 'Brutalist Wall', mood: 'Raw, urban, editorial', location: 'a raw concrete brutalist wall with formwork lines, rough texture, nothing else in frame', pose: 'model stands with back against the wall, head tilted up, both arms relaxed', lighting: 'hard directional late-afternoon sidelight casting soft concrete textures, 5000K' },
+  { id: 'urban-sidewalk', label: 'Urban Sidewalk', mood: 'Street, candid, effortless', location: 'a clean wide city sidewalk with painted crosswalk lines, minimal background, neutral grey pavement', pose: 'model walks mid-stride across the crosswalk lines, natural gait, not looking at camera', lighting: 'overcast city daylight, soft shadowless, neutral 5800K' },
+  { id: 'mirror-room', label: 'Mirror Room', mood: 'Conceptual, quiet', location: 'a minimal room with a tall full-length mirror on one wall, pale wood floor, off-white walls', pose: 'model stands facing the mirror in three-quarter view, reflection visible but soft', lighting: 'soft window light from behind camera, 5500K neutral, low contrast' },
+  { id: 'gallery-space', label: 'Gallery Space', mood: 'Artistic, curated', location: 'a museum gallery space with high white walls, pale wood floor, one blurred framed piece in distance', pose: 'model stands still facing away from the camera, head slightly turned', lighting: 'neutral gallery spotlight from overhead, 5700K, low contrast' },
+  { id: 'rooftop-minimal', label: 'Rooftop Minimal', mood: 'Open, quiet, elevated', location: 'a minimalist rooftop with clean concrete floor, distant city haze, no skyline clutter', pose: 'model stands at the edge looking out, three-quarter back view, arms loose', lighting: 'diffused open-sky light, no hard sun, cool 6000K with slight gradient from sky' },
+];
+
+interface HeritagePalette {
+  id: string;
+  label: string;
+  mood: string;
+  paletteDescription: string;
+  monogramDescription: string;
+  accentDescription: string;
+}
+
+const HERITAGE_PALETTES: HeritagePalette[] = [
+  { id: 'classic-monogram', label: 'Classic Monogram', mood: 'Timeless, archival, heritage', paletteDescription: 'warm tan and rich chestnut brown, canvas-and-leather heritage tones', monogramDescription: 'warm golden beige monogram on a deep chestnut canvas backdrop', accentDescription: 'brass gold for logo and wordmark' },
+  { id: 'forest-heritage', label: 'Forest Heritage', mood: 'Regal, stately, hunting lodge', paletteDescription: 'deep forest green with muted olive undertones, old-library ambience', monogramDescription: 'muted antique gold monogram on a deep forest green backdrop', accentDescription: 'antique gold for logo and wordmark' },
+  { id: 'bordeaux-wine', label: 'Bordeaux Wine', mood: 'Opulent, operatic, velvet', paletteDescription: 'deep bordeaux wine red with subtle crimson highlights, theatrical richness', monogramDescription: 'soft champagne gold monogram on a deep bordeaux velvet backdrop', accentDescription: 'champagne gold for logo and wordmark' },
+  { id: 'midnight-sapphire', label: 'Midnight Sapphire', mood: 'Refined, midnight, jeweled', paletteDescription: 'deep midnight sapphire blue with subtle navy undertones, jewel-box quiet', monogramDescription: 'pale moonlight silver monogram on a deep midnight sapphire backdrop', accentDescription: 'moonlight silver for logo and wordmark' },
+  { id: 'ivory-champagne', label: 'Ivory Champagne', mood: 'Bridal, ceremonial, golden', paletteDescription: 'warm ivory with champagne gold undertones, fine-linen elegance', monogramDescription: 'soft warm champagne monogram on an ivory cream backdrop', accentDescription: 'warm champagne gold for logo and wordmark' },
+  { id: 'black-onyx-gold', label: 'Black Onyx Gold', mood: 'Dramatic, nocturnal, couture', paletteDescription: 'deep matte onyx black with rich warm undertones, couture-runway drama', monogramDescription: 'bright burnished gold monogram on a matte onyx black backdrop', accentDescription: 'burnished gold for logo and wordmark' },
+  { id: 'burnt-terracotta', label: 'Burnt Terracotta', mood: 'Earthen, mediterranean, sun', paletteDescription: 'warm burnt terracotta orange with subtle ochre warmth, sun-baked earth', monogramDescription: 'bronze-copper monogram on a burnt terracotta backdrop', accentDescription: 'bronze copper for logo and wordmark' },
+  { id: 'sage-silver', label: 'Sage Silver', mood: 'Herbarium, cool, collected', paletteDescription: 'muted sage green-grey with soft cool undertones, botanical archive feel', monogramDescription: 'brushed silver monogram on a muted sage backdrop', accentDescription: 'brushed silver for logo and wordmark' },
+];
 
 interface PressPalette {
   id: string;
@@ -388,7 +438,9 @@ function StudioApp() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingCampaigns, setIsGeneratingCampaigns] = useState(false);
   const [isGeneratingPress, setIsGeneratingPress] = useState(false);
-  const [campaignTab, setCampaignTab] = useState<'scenes' | 'press'>('scenes');
+  const [isGeneratingEditorial, setIsGeneratingEditorial] = useState(false);
+  const [isGeneratingHeritage, setIsGeneratingHeritage] = useState(false);
+  const [campaignTab, setCampaignTab] = useState<'scenes' | 'press' | 'editorial' | 'heritage'>('scenes');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -863,6 +915,28 @@ Also provide a one-sentence product description.`,
     }));
   };
 
+  const toggleEditorialSetting = (itemId: string, settingId: string) => {
+    setApparelItems(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+      const current = i.selectedEditorialSettings || [];
+      const next = current.includes(settingId)
+        ? current.filter(s => s !== settingId)
+        : [...current, settingId];
+      return { ...i, selectedEditorialSettings: next };
+    }));
+  };
+
+  const toggleHeritagePalette = (itemId: string, paletteId: string) => {
+    setApparelItems(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+      const current = i.selectedHeritagePalettes || [];
+      const next = current.includes(paletteId)
+        ? current.filter(p => p !== paletteId)
+        : [...current, paletteId];
+      return { ...i, selectedHeritagePalettes: next };
+    }));
+  };
+
   const generateCampaigns = async (targetItemId?: string) => {
     const targets = targetItemId
       ? apparelItems.filter(i => i.id === targetItemId)
@@ -1161,6 +1235,280 @@ Reproduce the EXACT apparel from the provided reference images with full materia
       }
     } finally {
       setIsGeneratingPress(false);
+    }
+  };
+
+  const generateEditorialImages = async (targetItemId?: string) => {
+    const targets = targetItemId
+      ? apparelItems.filter(i => i.id === targetItemId)
+      : apparelItems;
+    const validTargets = targets.filter(i => (i.selectedEditorialSettings || []).length > 0);
+    if (validTargets.length === 0) return;
+
+    setIsGeneratingEditorial(true);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      const logoBase64 = logo ? await fileToBase64(logo.file) : null;
+
+      for (const item of validTargets) {
+        const selectedIds = item.selectedEditorialSettings || [];
+        const settingsToGenerate = EDITORIAL_SETTINGS.filter(s => selectedIds.includes(s.id));
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          editorialStatus: 'generating',
+          editorialImages: [],
+          editorialProgress: { current: 0, total: settingsToGenerate.length }
+        } : i));
+
+        const imageDataParts: { data: string; mimeType: string }[] = [];
+        for (const img of item.images) {
+          const base64 = await fileToBase64(img.file);
+          imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
+        }
+
+        const modelDescription = selectedGender === 'women'
+          ? "a single young Indian woman, age 20-26, elegant features, medium-brown skin, styled dark hair, natural beauty, understated confidence"
+          : "a single young Indian man, age 20-26, sharp features, medium-brown skin, well-groomed hair, quiet confidence";
+
+        const generatedEditorial: { settingId: string; settingLabel: string; view: GeneratedView }[] = [];
+
+        for (let si = 0; si < settingsToGenerate.length; si++) {
+          const setting = settingsToGenerate[si];
+
+          setApparelItems(prev => prev.map(i => i.id === item.id ? {
+            ...i,
+            editorialProgress: { current: si, total: settingsToGenerate.length }
+          } : i));
+
+          const parts: any[] = imageDataParts.map(img => ({
+            inlineData: { data: img.data, mimeType: img.mimeType }
+          }));
+
+          if (logoBase64) {
+            parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
+          }
+
+          const priceCopy = item.price?.trim() ? `₹${item.price.trim().replace(/^₹\s*/, '')}` : '';
+
+          const editorialPrompt = `You are a minimalist editorial fashion photographer shooting a lookbook for VPPA Fashions in the style of Zara / Massimo Dutti / Arket / COS official campaign photography. The mood is effortless, quiet, modern, and intentionally understated.
+
+FORMAT: 1:1 square. The frame feels like a stopped moment, not a posed photo.
+
+SETTING: "${setting.label}" -- ${setting.mood}. The environment is ${setting.location}. No additional props, no clutter, negative space everywhere.
+
+MODEL: ${modelDescription}. ${setting.pose}. Expression is calm and distant, never smiling for the camera. Wearing the EXACT apparel from the reference images -- reproduce the garment faithfully in cut, color, print, and fit.
+
+COMPOSITION: Intentionally asymmetric and off-center. The model occupies about 55-70% of the frame height; the rest is clean negative space that shows the architecture or environment. Crop feels editorial -- sometimes the top of the head or a limb is partially cut off. Avoid centering.
+
+LIGHTING: ${setting.lighting}. Low contrast, matte rendering, no harsh shadows. Natural highlights only. No studio strobe look, no dramatic key light, no rim. Feels like available light.
+
+PALETTE: Muted, desaturated, low-saturation neutrals. Dusty tones. The apparel keeps its real colors but the overall image feels earthy and cool. No punchy saturation. No colored gels.
+
+BRANDING: Absolutely subtle VPPA branding. A small VPPA logo mark in the lower-right corner at about 4% of canvas width, in a muted neutral color that blends with the setting. No wordmark, no large logo, no watermark. This reads like a campaign image, not an advertisement.
+${priceCopy ? `\nPRICE: Place a single line of micro-copy "${priceCopy}" in a very small sans-serif directly below or beside the tiny VPPA mark, same muted neutral tone, lowercase style. The rupee symbol (₹) MUST be clearly legible.` : ''}
+
+TECH: Natural photography quality, matte finish, neutral color grade with slight coolness. Subtle film grain. f/4 equivalent aperture with very gentle focus falloff on the background, model fully sharp. Avoid AI-plastic skin or fabric smoothness.
+
+STRICT RULES: No text beyond the tiny VPPA mark${priceCopy ? ' and the price line' : ''}. No additional people. No dramatic poses. No studio sweep. No fake beauty retouching. The apparel must be reproduced EXACTLY as shown in the reference images.
+
+MOOD REFERENCE: Zara SS/AW Studio campaigns, Massimo Dutti lookbook, Arket ensemble imagery, COS editorial. Quiet luxury. Effortless.`;
+
+          parts.push({ text: editorialPrompt });
+
+          try {
+            const response = await genAI.models.generateContent({
+              model: 'gemini-3.1-flash-image-preview',
+              contents: { parts },
+              config: {
+                imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
+              }
+            });
+
+            let url = '';
+            let desc = '';
+            for (const p of response.candidates?.[0]?.content?.parts || []) {
+              if (p.inlineData) url = `data:image/png;base64,${p.inlineData.data}`;
+              else if (p.text) desc = p.text;
+            }
+
+            if (url) {
+              generatedEditorial.push({
+                settingId: setting.id,
+                settingLabel: setting.label,
+                view: { url, type: setting.label, description: desc || `VPPA editorial · ${setting.label}` }
+              });
+              setApparelItems(prev => prev.map(i => i.id === item.id ? {
+                ...i,
+                editorialImages: [...generatedEditorial]
+              } : i));
+            }
+
+            await sleep(1000);
+          } catch (err) {
+            console.error(`Editorial generation failed for ${setting.label}:`, err);
+          }
+        }
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          editorialStatus: generatedEditorial.length > 0 ? 'completed' : 'error',
+          editorialProgress: undefined
+        } : i));
+      }
+    } finally {
+      setIsGeneratingEditorial(false);
+    }
+  };
+
+  const generateHeritageImages = async (targetItemId?: string) => {
+    const targets = targetItemId
+      ? apparelItems.filter(i => i.id === targetItemId)
+      : apparelItems;
+    const validTargets = targets.filter(i => (i.selectedHeritagePalettes || []).length > 0);
+    if (validTargets.length === 0) return;
+
+    setIsGeneratingHeritage(true);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      const logoBase64 = logo ? await fileToBase64(logo.file) : null;
+
+      for (const item of validTargets) {
+        const selectedIds = item.selectedHeritagePalettes || [];
+        const palettesToGenerate = HERITAGE_PALETTES.filter(p => selectedIds.includes(p.id));
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          heritageStatus: 'generating',
+          heritageImages: [],
+          heritageProgress: { current: 0, total: palettesToGenerate.length }
+        } : i));
+
+        const imageDataParts: { data: string; mimeType: string }[] = [];
+        for (const img of item.images) {
+          const base64 = await fileToBase64(img.file);
+          imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
+        }
+
+        const modelDescription = selectedGender === 'women'
+          ? "a single young Indian woman, age 22-28, refined features, medium-brown skin, elegantly styled dark hair, sophisticated editorial expression"
+          : "a single young Indian man, age 22-28, aristocratic features, medium-brown skin, perfectly groomed hair, sophisticated editorial expression";
+
+        const generatedHeritage: { paletteId: string; paletteLabel: string; view: GeneratedView }[] = [];
+
+        for (let pi = 0; pi < palettesToGenerate.length; pi++) {
+          const palette = palettesToGenerate[pi];
+
+          setApparelItems(prev => prev.map(i => i.id === item.id ? {
+            ...i,
+            heritageProgress: { current: pi, total: palettesToGenerate.length }
+          } : i));
+
+          const parts: any[] = imageDataParts.map(img => ({
+            inlineData: { data: img.data, mimeType: img.mimeType }
+          }));
+
+          if (logoBase64) {
+            parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
+          }
+
+          const priceCopy = item.price?.trim() ? `₹${item.price.trim().replace(/^₹\s*/, '')}` : '';
+
+          const heritagePrompt = `You are a Senior Heritage Brand Art Director creating a flagship campaign key visual for VPPA Fashions in the style of Louis Vuitton / Gucci / Burberry / Hermes heritage campaigns. The mood is timeless, archival, opulent, and sophisticated.
+
+FORMAT: 1:1 square.
+
+HERITAGE PALETTE: "${palette.label}" -- ${palette.mood}. Overall tones: ${palette.paletteDescription}.
+
+MONOGRAM BACKDROP:
+- Fill the entire background with a repeating VPPA monogram pattern -- ${palette.monogramDescription}.
+- Classic heritage monogram layout: each "VPPA" wordmark-and-icon motif arranged in an elegant diagonal grid or damier/checkerboard rhythm.
+- Each monogram instance spans about 14-18% of canvas width.
+- The monogram pattern is clearly visible across the canvas but sits as a rich decorative backdrop, softer in value than the hero subject. Roughly 30-45% contrast against the base palette so it reads as a woven/printed heritage canvas, not a watermark.
+- No hard edges -- feels printed on textured canvas or woven into heavy fabric.
+
+MODEL:
+- ${modelDescription}.
+- Sophisticated editorial pose: seated on an antique leather-trimmed trunk or leaning against an ornate gold-edged surface, OR standing three-quarter with one hand on a heritage accessory.
+- The body language is poised, classical, slow.
+- Wearing the EXACT apparel from the reference images -- reproduce the garment faithfully in cut, color, print, drape, and fabric.
+
+PRODUCT HERO:
+- The garment is the dramatic focal point. Rich fabric texture is visible -- weave, stitching, hardware, any prints or embroidery shown clearly.
+- The product and the model together form the visual center of gravity against the monogram backdrop.
+
+LIGHTING:
+- Dramatic Rembrandt-style key light from the upper-left at ~45 degrees, warm golden key, color temperature 4200-4800K.
+- Deep cinematic shadow on the opposite side. Contrast ratio approximately 3:1.
+- Gentle fill bounce on the shadow side to preserve detail. No harsh highlights on fabric, but hardware can show small specular micro-reflections.
+- Global illumination is on, so warmth bounces subtly between the model, garment, and backdrop.
+- The lighting feels classical and editorial, like an archival campaign photograph.
+
+COMPOSITION: Center-weighted with classical balance. Model slightly off-center following the rule of thirds. Rich monogram backdrop visible above, beside, and behind the model. Feels like a framed heritage portrait.
+
+BRANDING:
+- A prominent VPPA logo in the upper third of the canvas, centered horizontally, ~32% of canvas width, in ${palette.accentDescription}${logoBase64 ? ' -- use the provided VPPA logo faithfully' : ''}.
+- Directly below the logo mark, render "VPPA FASHIONS" in spaced uppercase letters, clean geometric sans-serif, tracking about +250, same accent color, optical size ~50% of the logo height.
+- Subtle thin 1px horizontal rule line in the accent color spanning 70% of canvas width, placed roughly 10% from the bottom.
+- Below the rule: a centered micro-copy line in small-caps, same accent color: "vppa maison · ${palette.label.toLowerCase()} collection".
+${priceCopy ? `- Below the collection label, add one more centered line "${priceCopy}" in the same accent color and small-caps style. The rupee symbol (₹) MUST be clearly legible.` : ''}
+
+LUXURY DETAIL: Brass/gold/silver hardware micro-reflections. Rich fabric sheen where appropriate. Antique leather texture if the scene uses a trunk. Feels like an archive editorial.
+
+TECH: Photorealistic, cinematic tone mapping, rich warm color grade, f/5.6 equivalent with gentle depth falloff behind the subject. No plastic AI finish. Microscopic surface imperfection on leather and fabric. No reflections on the backdrop beyond the monogram itself.
+
+STRICT RULES: No text other than the VPPA logo, wordmark, collection label${priceCopy ? ', and price line' : ''}. No additional people. No modern tech products. No watermarks beyond the monogram backdrop.
+
+MOOD REFERENCE: Louis Vuitton monogram campaigns, Gucci Aria editorial, Burberry heritage, Hermes archival.
+
+Reproduce the EXACT apparel from the provided reference images. Output one image only.`;
+
+          parts.push({ text: heritagePrompt });
+
+          try {
+            const response = await genAI.models.generateContent({
+              model: 'gemini-3.1-flash-image-preview',
+              contents: { parts },
+              config: {
+                imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
+              }
+            });
+
+            let url = '';
+            let desc = '';
+            for (const p of response.candidates?.[0]?.content?.parts || []) {
+              if (p.inlineData) url = `data:image/png;base64,${p.inlineData.data}`;
+              else if (p.text) desc = p.text;
+            }
+
+            if (url) {
+              generatedHeritage.push({
+                paletteId: palette.id,
+                paletteLabel: palette.label,
+                view: { url, type: palette.label, description: desc || `VPPA heritage · ${palette.label}` }
+              });
+              setApparelItems(prev => prev.map(i => i.id === item.id ? {
+                ...i,
+                heritageImages: [...generatedHeritage]
+              } : i));
+            }
+
+            await sleep(1000);
+          } catch (err) {
+            console.error(`Heritage generation failed for ${palette.label}:`, err);
+          }
+        }
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          heritageStatus: generatedHeritage.length > 0 ? 'completed' : 'error',
+          heritageProgress: undefined
+        } : i));
+      }
+    } finally {
+      setIsGeneratingHeritage(false);
     }
   };
 
@@ -1574,9 +1922,10 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                   </h2>
                 </div>
                 <p className="text-sm text-gray-400">
-                  {campaignTab === 'scenes'
-                    ? 'Mixed-media campaign scenes -- pick one or many moods, hit generate, and get a poster for every scene'
-                    : 'Luxury press-release key visuals -- 1:1 square, photorealistic product with VPPA monogram watermark'}
+                  {campaignTab === 'scenes' && 'Mixed-media campaign scenes -- pick one or many moods, hit generate, and get a poster for every scene'}
+                  {campaignTab === 'press' && 'Luxury press-release key visuals -- 1:1 square, photorealistic product with VPPA monogram watermark'}
+                  {campaignTab === 'editorial' && 'Zara / Arket / COS style minimalist lookbook -- effortless, quiet, modern editorial'}
+                  {campaignTab === 'heritage' && 'Louis Vuitton / Gucci style heritage campaign -- rich monogram backdrop, cinematic lighting, archival luxury'}
                 </p>
               </div>
               {(() => {
@@ -1588,20 +1937,11 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                       disabled={totalSelected === 0 || isGeneratingCampaigns || isGenerating}
                       className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-fuchsia-500 to-rose-500 hover:from-fuchsia-600 hover:to-rose-600 text-white shadow-md shadow-fuchsia-500/20"
                     >
-                      {isGeneratingCampaigns ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Creating all...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}
-                        </>
-                      )}
+                      {isGeneratingCampaigns ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
                     </button>
                   );
-                } else {
+                }
+                if (campaignTab === 'press') {
                   const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedPressPalettes?.length || 0), 0);
                   return (
                     <button
@@ -1609,31 +1949,41 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                       disabled={totalSelected === 0 || isGeneratingPress || isGenerating}
                       className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md shadow-amber-500/20"
                     >
-                      {isGeneratingPress ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Creating all...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}
-                        </>
-                      )}
+                      {isGeneratingPress ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
                     </button>
                   );
                 }
+                if (campaignTab === 'editorial') {
+                  const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedEditorialSettings?.length || 0), 0);
+                  return (
+                    <button
+                      onClick={() => generateEditorialImages()}
+                      disabled={totalSelected === 0 || isGeneratingEditorial || isGenerating}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-900 hover:to-gray-800 text-white shadow-md shadow-gray-500/20"
+                    >
+                      {isGeneratingEditorial ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
+                    </button>
+                  );
+                }
+                const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedHeritagePalettes?.length || 0), 0);
+                return (
+                  <button
+                    onClick={() => generateHeritageImages()}
+                    disabled={totalSelected === 0 || isGeneratingHeritage || isGenerating}
+                    className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-yellow-700 to-amber-700 hover:from-yellow-800 hover:to-amber-800 text-white shadow-md shadow-yellow-700/20"
+                  >
+                    {isGeneratingHeritage ? (<><Loader2 className="w-4 h-4 animate-spin" />Creating all...</>) : (<><Sparkles className="w-4 h-4" />Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}</>)}
+                  </button>
+                );
               })()}
             </div>
 
             {/* Campaign Type Tabs */}
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-6 flex-wrap">
               <button
                 onClick={() => setCampaignTab('scenes')}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  campaignTab === 'scenes'
-                    ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
-                    : 'text-gray-400 hover:text-gray-600'
+                  campaignTab === 'scenes' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -1643,18 +1993,36 @@ Reproduce the EXACT apparel from the provided reference images with full materia
               <button
                 onClick={() => setCampaignTab('press')}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                  campaignTab === 'press'
-                    ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
-                    : 'text-gray-400 hover:text-gray-600'
+                  campaignTab === 'press' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 <ImageIcon className="w-3.5 h-3.5" />
                 Press Release
-                <span className="text-[9px] text-gray-400 font-normal">1:1</span>
+                <span className="text-[9px] text-gray-400 font-normal">LV style</span>
+              </button>
+              <button
+                onClick={() => setCampaignTab('editorial')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'editorial' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                Editorial Lookbook
+                <span className="text-[9px] text-gray-400 font-normal">Zara style</span>
+              </button>
+              <button
+                onClick={() => setCampaignTab('heritage')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'heritage' ? 'bg-white shadow-sm border border-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Heritage Luxury
+                <span className="text-[9px] text-gray-400 font-normal">LV / Gucci</span>
               </button>
             </div>
 
-            {campaignTab === 'scenes' ? (
+            {campaignTab === 'scenes' && (
             <div className="space-y-6">
               {apparelItems.map((item) => {
                 const hero = item.heroColor || '#6366f1';
@@ -1830,7 +2198,8 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                 );
               })}
             </div>
-            ) : (
+            )}
+            {campaignTab === 'press' && (
             <div className="space-y-6">
               {apparelItems.map((item) => {
                 const selectedPalettes = item.selectedPressPalettes || [];
@@ -1983,6 +2352,359 @@ Reproduce the EXACT apparel from the provided reference images with full materia
                                   </div>
                                   <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
                                     generated ? 'text-gray-500' : isCurrent ? 'text-amber-500' : 'text-gray-300'
+                                  }`}>
+                                    {palette.label}
+                                  </p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+
+            {campaignTab === 'editorial' && (
+            <div className="space-y-6">
+              {apparelItems.map((item) => {
+                const selectedSettings = item.selectedEditorialSettings || [];
+                const hasSelection = selectedSettings.length > 0;
+                const isItemGenerating = item.editorialStatus === 'generating';
+                const editorialImages = item.editorialImages || [];
+                return (
+                  <div key={`editorial-${item.id}`} className="glass rounded-2xl overflow-hidden">
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                      <img src={item.images[0].preview} alt="ref" className="w-11 h-11 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 truncate">Editorial Lookbook</span>
+                          {item.uploadMode === 'printed' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">Printed</span>
+                          )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedSettings.length} selected</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · Zara / COS / Arket aesthetic</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-gray-400 focus-within:ring-2 focus-within:ring-gray-100 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => generateEditorialImages(item.id)}
+                          disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingEditorial}
+                          className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-900 hover:to-gray-800 text-white shadow-sm"
+                        >
+                          {isItemGenerating ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              {item.editorialProgress ? `${item.editorialProgress.current + 1}/${item.editorialProgress.total}` : 'Creating'}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              Generate {hasSelection ? `(${selectedSettings.length})` : ''}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Setting Selection */}
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Select Locations (multiple)</label>
+                        <div className="flex gap-2 text-[10px]">
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedEditorialSettings: EDITORIAL_SETTINGS.map(s => s.id) } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Select all
+                          </button>
+                          <span className="text-gray-200">·</span>
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedEditorialSettings: [] } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                        {EDITORIAL_SETTINGS.map(setting => {
+                          const isSelected = selectedSettings.includes(setting.id);
+                          return (
+                            <button
+                              key={setting.id}
+                              onClick={() => toggleEditorialSetting(item.id, setting.id)}
+                              disabled={isItemGenerating}
+                              className={`px-3 py-2 rounded-lg text-left transition-all duration-200 border disabled:opacity-50 ${
+                                isSelected
+                                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                              }`}
+                            >
+                              <p className="text-[11px] font-semibold truncate">{setting.label}</p>
+                              <p className={`text-[9px] truncate mt-0.5 ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{setting.mood}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Results */}
+                    <div className="p-5">
+                      {editorialImages.length === 0 && !isItemGenerating ? (
+                        <div className="py-10 flex flex-col items-center justify-center gap-2 text-center">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <Camera className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <p className="text-xs text-gray-400">Select one or more locations, then hit Generate</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {(() => {
+                            const selectedDefs = EDITORIAL_SETTINGS.filter(s => selectedSettings.includes(s.id));
+                            const total = isItemGenerating && item.editorialProgress ? item.editorialProgress.total : selectedDefs.length;
+                            const currentIdx = item.editorialProgress?.current ?? -1;
+                            return selectedDefs.slice(0, Math.max(total, editorialImages.length)).map((setting, idx) => {
+                              const generated = editorialImages.find(c => c.settingId === setting.id);
+                              const isCurrent = isItemGenerating && idx === currentIdx;
+                              const isWaiting = isItemGenerating && idx > currentIdx && !generated;
+                              return (
+                                <div key={setting.id} className="group">
+                                  <div className={`aspect-square rounded-xl overflow-hidden relative border transition-all ${
+                                    generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100 bg-gray-50/50'
+                                  } ${isCurrent ? 'ring-1 ring-gray-400' : ''}`}>
+                                    {generated ? (
+                                      <>
+                                        <img src={generated.view.url} alt={setting.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-2">
+                                          <button
+                                            onClick={() => downloadImage(generated.view.url, `VPPA_Editorial_${setting.id}_${item.id}.png`)}
+                                            className="w-full py-1.5 rounded-lg bg-white text-gray-700 text-[9px] font-semibold flex items-center justify-center gap-1 hover:bg-gray-50 shadow-sm"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            Save
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : isCurrent ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                                        <Loader2 className="w-5 h-5 animate-spin text-gray-600" />
+                                        <div className="w-8 h-0.5 rounded-full bg-gray-200 overflow-hidden">
+                                          <div className="h-full bg-gray-500 rounded-full shimmer" style={{ width: '60%' }} />
+                                        </div>
+                                      </div>
+                                    ) : isWaiting ? (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 animate-pulse" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                                          <ImageIcon className="w-3 h-3 text-gray-300" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
+                                    generated ? 'text-gray-500' : isCurrent ? 'text-gray-700' : 'text-gray-300'
+                                  }`}>
+                                    {setting.label}
+                                  </p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+
+            {campaignTab === 'heritage' && (
+            <div className="space-y-6">
+              {apparelItems.map((item) => {
+                const selectedPalettes = item.selectedHeritagePalettes || [];
+                const hasSelection = selectedPalettes.length > 0;
+                const isItemGenerating = item.heritageStatus === 'generating';
+                const heritageImages = item.heritageImages || [];
+                return (
+                  <div key={`heritage-${item.id}`} className="glass rounded-2xl overflow-hidden">
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                      <img src={item.images[0].preview} alt="ref" className="w-11 h-11 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 truncate">Heritage Luxury</span>
+                          {item.uploadMode === 'printed' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">Printed</span>
+                          )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedPalettes.length} selected</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · LV / Gucci monogram aesthetic</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 focus-within:border-yellow-600 focus-within:ring-2 focus-within:ring-yellow-100 transition-all">
+                          <span className="text-xs font-semibold text-gray-400">₹</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.price || ''}
+                            onChange={(e) => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, price: e.target.value.replace(/[^\d.,]/g, '') } : i))}
+                            placeholder="Price"
+                            className="w-20 text-xs text-gray-700 placeholder:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => generateHeritageImages(item.id)}
+                          disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingHeritage}
+                          className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-yellow-700 to-amber-700 hover:from-yellow-800 hover:to-amber-800 text-white shadow-sm"
+                        >
+                          {isItemGenerating ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              {item.heritageProgress ? `${item.heritageProgress.current + 1}/${item.heritageProgress.total}` : 'Creating'}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              Generate {hasSelection ? `(${selectedPalettes.length})` : ''}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Palette Selection */}
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Select Heritage Palettes (multiple)</label>
+                        <div className="flex gap-2 text-[10px]">
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedHeritagePalettes: HERITAGE_PALETTES.map(p => p.id) } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Select all
+                          </button>
+                          <span className="text-gray-200">·</span>
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedHeritagePalettes: [] } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                        {HERITAGE_PALETTES.map(palette => {
+                          const isSelected = selectedPalettes.includes(palette.id);
+                          const previewBg = palette.id === 'classic-monogram' ? '#8B6F47' :
+                                            palette.id === 'forest-heritage' ? '#2D4A3A' :
+                                            palette.id === 'bordeaux-wine' ? '#5E1A2E' :
+                                            palette.id === 'midnight-sapphire' ? '#1C2536' :
+                                            palette.id === 'ivory-champagne' ? '#EFE4CA' :
+                                            palette.id === 'black-onyx-gold' ? '#1A1615' :
+                                            palette.id === 'burnt-terracotta' ? '#9E4A2E' :
+                                            '#A8B0A0';
+                          return (
+                            <button
+                              key={palette.id}
+                              onClick={() => toggleHeritagePalette(item.id, palette.id)}
+                              disabled={isItemGenerating}
+                              className={`p-2 rounded-lg transition-all duration-200 border disabled:opacity-50 text-left ${
+                                isSelected
+                                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-amber-300'
+                              }`}
+                            >
+                              <div className="w-full aspect-square rounded-md mb-1.5 border relative overflow-hidden" style={{ backgroundColor: previewBg, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }}>
+                                <div className="absolute inset-0 opacity-30 flex items-center justify-center">
+                                  <span className="text-[8px] font-bold tracking-wider" style={{ color: palette.id === 'ivory-champagne' ? '#8B6F47' : '#E9D9B8' }}>V·P·P·A</span>
+                                </div>
+                              </div>
+                              <p className="text-[10px] font-semibold truncate">{palette.label}</p>
+                              <p className={`text-[8px] truncate ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{palette.mood}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Results */}
+                    <div className="p-5">
+                      {heritageImages.length === 0 && !isItemGenerating ? (
+                        <div className="py-10 flex flex-col items-center justify-center gap-2 text-center">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <Zap className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <p className="text-xs text-gray-400">Select one or more heritage palettes, then hit Generate</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {(() => {
+                            const selectedDefs = HERITAGE_PALETTES.filter(p => selectedPalettes.includes(p.id));
+                            const total = isItemGenerating && item.heritageProgress ? item.heritageProgress.total : selectedDefs.length;
+                            const currentIdx = item.heritageProgress?.current ?? -1;
+                            return selectedDefs.slice(0, Math.max(total, heritageImages.length)).map((palette, idx) => {
+                              const generated = heritageImages.find(c => c.paletteId === palette.id);
+                              const isCurrent = isItemGenerating && idx === currentIdx;
+                              const isWaiting = isItemGenerating && idx > currentIdx && !generated;
+                              return (
+                                <div key={palette.id} className="group">
+                                  <div className={`aspect-square rounded-xl overflow-hidden relative border transition-all ${
+                                    generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100 bg-gray-50/50'
+                                  } ${isCurrent ? 'ring-1 ring-amber-400' : ''}`}>
+                                    {generated ? (
+                                      <>
+                                        <img src={generated.view.url} alt={palette.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-2">
+                                          <button
+                                            onClick={() => downloadImage(generated.view.url, `VPPA_Heritage_${palette.id}_${item.id}.png`)}
+                                            className="w-full py-1.5 rounded-lg bg-white text-gray-700 text-[9px] font-semibold flex items-center justify-center gap-1 hover:bg-gray-50 shadow-sm"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            Save
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : isCurrent ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                                        <Loader2 className="w-5 h-5 animate-spin text-amber-700" />
+                                        <div className="w-8 h-0.5 rounded-full bg-amber-100 overflow-hidden">
+                                          <div className="h-full bg-amber-500 rounded-full shimmer" style={{ width: '60%' }} />
+                                        </div>
+                                      </div>
+                                    ) : isWaiting ? (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 animate-pulse" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
+                                          <ImageIcon className="w-3 h-3 text-gray-300" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
+                                    generated ? 'text-gray-500' : isCurrent ? 'text-amber-700' : 'text-gray-300'
                                   }`}>
                                     {palette.label}
                                   </p>
