@@ -39,7 +39,31 @@ interface ApparelItem {
   campaignImages?: { objectId: string; objectLabel: string; view: GeneratedView }[];
   campaignStatus?: 'idle' | 'generating' | 'completed' | 'error';
   campaignProgress?: { current: number; total: number };
+  selectedPressPalettes?: string[];
+  pressImages?: { paletteId: string; paletteLabel: string; view: GeneratedView }[];
+  pressStatus?: 'idle' | 'generating' | 'completed' | 'error';
+  pressProgress?: { current: number; total: number };
 }
+
+interface PressPalette {
+  id: string;
+  label: string;
+  mood: string;
+  backgroundDescription: string;
+  backgroundHex: string;
+  accentDescription: string;
+}
+
+const PRESS_PALETTES: PressPalette[] = [
+  { id: 'ivory', label: 'Ivory Heritage', mood: 'Classic, archival, museum', backgroundDescription: 'warm ivory cream, soft and uniform, completely shadowless', backgroundHex: '#F4EFE6', accentDescription: 'deep warm charcoal ink for logo and rule line' },
+  { id: 'sand', label: 'Warm Sand', mood: 'Earthy, mediterranean', backgroundDescription: 'soft warm sand stone neutral, subtle warm undertone', backgroundHex: '#E8DFCF', accentDescription: 'rich espresso brown for logo and rule line' },
+  { id: 'dove', label: 'Dove Grey', mood: 'Modern, quiet, minimalist', backgroundDescription: 'cool dove grey neutral, museum-plate feel', backgroundHex: '#DCD9D2', accentDescription: 'soft graphite black for logo and rule line' },
+  { id: 'blush', label: 'Blush Cream', mood: 'Romantic, feminine, soft', backgroundDescription: 'warm blush cream with subtle pink undertone', backgroundHex: '#F2E4DE', accentDescription: 'deep burgundy wine for logo and rule line' },
+  { id: 'onyx', label: 'Onyx Luxe', mood: 'Dramatic, evening, bold', backgroundDescription: 'deep onyx black, rich and matte with subtle warmth', backgroundHex: '#1A1615', accentDescription: 'warm champagne gold for logo and rule line' },
+  { id: 'champagne', label: 'Champagne Gold', mood: 'Opulent, gilded, celebration', backgroundDescription: 'warm champagne gold neutral with subtle metallic warmth', backgroundHex: '#E9D9B8', accentDescription: 'deep oxblood for logo and rule line' },
+  { id: 'sage', label: 'Sage Mist', mood: 'Botanical, calm, fresh', backgroundDescription: 'muted sage green neutral, herbarium-quiet', backgroundHex: '#D4D9CB', accentDescription: 'deep forest green for logo and rule line' },
+  { id: 'midnight', label: 'Midnight Navy', mood: 'Editorial, nocturnal, refined', backgroundDescription: 'deep midnight navy blue with very subtle sheen', backgroundHex: '#1C2536', accentDescription: 'soft ivory cream for logo and rule line' },
+];
 
 interface CampaignScene {
   id: string;
@@ -362,6 +386,8 @@ function StudioApp() {
   const [selectedGender, setSelectedGender] = useState<Gender>('women');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingCampaigns, setIsGeneratingCampaigns] = useState(false);
+  const [isGeneratingPress, setIsGeneratingPress] = useState(false);
+  const [campaignTab, setCampaignTab] = useState<'scenes' | 'press'>('scenes');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -825,6 +851,17 @@ Also provide a one-sentence product description.`,
     }));
   };
 
+  const togglePressPalette = (itemId: string, paletteId: string) => {
+    setApparelItems(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+      const current = i.selectedPressPalettes || [];
+      const next = current.includes(paletteId)
+        ? current.filter(p => p !== paletteId)
+        : [...current, paletteId];
+      return { ...i, selectedPressPalettes: next };
+    }));
+  };
+
   const generateCampaigns = async (targetItemId?: string) => {
     const targets = targetItemId
       ? apparelItems.filter(i => i.id === targetItemId)
@@ -976,6 +1013,150 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
       }
     } finally {
       setIsGeneratingCampaigns(false);
+    }
+  };
+
+  const generatePressImages = async (targetItemId?: string) => {
+    const targets = targetItemId
+      ? apparelItems.filter(i => i.id === targetItemId)
+      : apparelItems;
+    const validTargets = targets.filter(i => (i.selectedPressPalettes || []).length > 0);
+    if (validTargets.length === 0) return;
+
+    setIsGeneratingPress(true);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      const logoBase64 = logo ? await fileToBase64(logo.file) : null;
+
+      for (const item of validTargets) {
+        const selectedIds = item.selectedPressPalettes || [];
+        const palettesToGenerate = PRESS_PALETTES.filter(p => selectedIds.includes(p.id));
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          pressStatus: 'generating',
+          pressImages: [],
+          pressProgress: { current: 0, total: palettesToGenerate.length }
+        } : i));
+
+        const imageDataParts: { data: string; mimeType: string }[] = [];
+        for (const img of item.images) {
+          const base64 = await fileToBase64(img.file);
+          imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
+        }
+
+        const generatedPress: { paletteId: string; paletteLabel: string; view: GeneratedView }[] = [];
+
+        for (let pi = 0; pi < palettesToGenerate.length; pi++) {
+          const palette = palettesToGenerate[pi];
+
+          setApparelItems(prev => prev.map(i => i.id === item.id ? {
+            ...i,
+            pressProgress: { current: pi, total: palettesToGenerate.length }
+          } : i));
+
+          const parts: any[] = imageDataParts.map(img => ({
+            inlineData: { data: img.data, mimeType: img.mimeType }
+          }));
+
+          if (logoBase64) {
+            parts.push({ inlineData: { data: logoBase64, mimeType: getMimeType(logo!.file) } });
+          }
+
+          const pressPrompt = `You are a Senior Luxury Fashion Art Director and Studio Photographer for VPPA Fashions, specializing in high-end press imagery, flagship campaign key visuals, and mobile-first brand content. Produce a single 9:16 vertical key visual that could sit inside an official VPPA press kit or flagship e-commerce hero slot. Mood reference: Louis Vuitton, Bottega Veneta, and Celine official campaign and e-commerce photography standards.
+
+FORMAT: Vertical 9:16 aspect ratio.
+
+BACKGROUND (Canvas):
+- Single flat uniform field of ${palette.backgroundDescription}. Target tone approximately ${palette.backgroundHex}.
+- Absolutely no gradients, no vignette, no texture, no shadows across the background plane. Perfectly uniform corner-to-corner.
+- Apply a tone-on-tone VPPA monogram watermark across the entire canvas. The monogram is a large repeating "VPPA" wordmark motif, each instance spanning 18-22% of canvas width, tiled in a diagonal or offset grid pattern. Render the watermark as a ghost pattern with a value shift of ~10% from the background tone (slightly darker on light palettes, slightly lighter on dark palettes), at 12-15% opacity. Soft edges, feels embossed or tone-on-tone woven -- never printed, never hard-edged. The watermark must recede fully behind all other elements.
+
+LOGO (top of frame):
+- Reproduce the VPPA logo with full fidelity${logoBase64 ? ' -- use the provided VPPA logo faithfully for letterforms and icon' : ''}.
+- Place the logo centered horizontally in the upper third of the frame (top 28% of canvas).
+- Logo scale: approximately 42-48% of canvas width.
+- Logo rendering: flat 2D, no extrusion, no chrome, no 3D effects.
+- Logo color: use ${palette.accentDescription}. Apply VPPA brand colorway consistently.
+- Directly below the main logo mark, place the full "VPPA" wordmark in spaced capital letters -- clean geometric sans-serif, letter-spacing roughly +250 tracking, same accent color, optical size about 55% of the logo height. No decorative elements between logo and wordmark.
+
+PRODUCT (the apparel in the reference images):
+- Render the exact garment from the provided reference images as a photorealistic studio object with maximum material fidelity.
+- Show visible weave of the fabric, stitching thread, accurate print/graphic reproduction, realistic edge hems, and any hardware (buttons, zippers) with true metallic micro-reflections.
+- If the garment has prints or graphics, reproduce them with perfect accuracy and legibility.
+- Placement: the garment enters the frame from the bottom-right corner at a natural 25-35 degree angle, as if casually laid down or captured mid-motion. Feels intentional and editorial, not accidental.
+- Crop the garment so only 60-75% of it is visible within the frame. The product occupies roughly the lower 55-65% of the canvas.
+- The garment must feel physically present -- cast an extremely soft, barely visible contact shadow (opacity 8-12%) on the canvas beneath the nearest edge. No hard drop shadows. No floating look.
+
+LIGHTING:
+- Simulated large north-facing studio window light. Soft, directional, shadowless on the background.
+- Color temperature 5500-6000K, neutral daylight with a slightly cool cast.
+- Key light: large softbox from upper-left, even fill across the entire product surface. Minimal contrast ratio 1.2:1 to 1.5:1.
+- Fill: large bounce from the right, eliminating harsh shadows.
+- No rim light. No dramatic contrast. No specular hotspots on fabric -- only subtle micro-reflections on any metal hardware. The philosophy: the product sells itself, light only reveals.
+- Global illumination enabled for subtle inter-reflections between product surfaces.
+
+BOTTOM FINISHING:
+- A thin 1px horizontal rule line in ${palette.accentDescription}, 80% of canvas width, centered horizontally, placed roughly 8% from the bottom edge.
+- Below the rule line, a single line of micro-copy in clean sans-serif, small-caps, minimal tracking, accent color: "vppa fashions ${palette.mood.toLowerCase().split(',')[0].trim()} collection". Subtle, understated, lowercase except the wordmark style.
+- No other text anywhere in the composition.
+
+TECH RULES:
+- Photorealistic CGI product visualization, Keyshot / Octane aesthetic.
+- f/16 equivalent depth of field: everything tack-sharp, zero bokeh.
+- Tone mapping: clean and true-to-life. No filmic crush, no vignette, no film grain.
+- Neutral color grade faithful to the real product. Slight warmth only in the ${palette.label.toLowerCase()} background, not on the product.
+- No AI-plastic smoothing on fabric. Microscopic surface imperfection maps required on any leather, denim, or textured fabric.
+- No reflections on the background. No environmental reflections. Studio-only lighting.
+- The final image must feel clean enough to be used as an official VPPA press image.
+
+Reproduce the EXACT apparel from the provided reference images with full material and print fidelity. Output one image only.`;
+
+          parts.push({ text: pressPrompt });
+
+          try {
+            const response = await genAI.models.generateContent({
+              model: 'gemini-3.1-flash-image-preview',
+              contents: { parts },
+              config: {
+                imageConfig: { aspectRatio: "9:16", imageSize: "1K" }
+              }
+            });
+
+            let url = '';
+            let desc = '';
+            for (const p of response.candidates?.[0]?.content?.parts || []) {
+              if (p.inlineData) url = `data:image/png;base64,${p.inlineData.data}`;
+              else if (p.text) desc = p.text;
+            }
+
+            if (url) {
+              generatedPress.push({
+                paletteId: palette.id,
+                paletteLabel: palette.label,
+                view: { url, type: palette.label, description: desc || `VPPA press · ${palette.label}` }
+              });
+              setApparelItems(prev => prev.map(i => i.id === item.id ? {
+                ...i,
+                pressImages: [...generatedPress]
+              } : i));
+            }
+
+            await sleep(1000);
+          } catch (err) {
+            console.error(`Press generation failed for ${palette.label}:`, err);
+          }
+        }
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? {
+          ...i,
+          pressStatus: generatedPress.length > 0 ? 'completed' : 'error',
+          pressProgress: undefined
+        } : i));
+      }
+    } finally {
+      setIsGeneratingPress(false);
     }
   };
 
@@ -1388,32 +1569,88 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
                     Brand <span className="font-serif italic font-normal text-gray-500">Campaigns</span>
                   </h2>
                 </div>
-                <p className="text-sm text-gray-400">Mixed-media campaign scenes -- pick one or many moods, hit generate, and get a poster for every scene</p>
+                <p className="text-sm text-gray-400">
+                  {campaignTab === 'scenes'
+                    ? 'Mixed-media campaign scenes -- pick one or many moods, hit generate, and get a poster for every scene'
+                    : 'Luxury press-release key visuals -- 9:16 vertical, photorealistic product with VPPA monogram watermark'}
+                </p>
               </div>
               {(() => {
-                const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedCampaignObjects?.length || 0), 0);
-                return (
-                  <button
-                    onClick={() => generateCampaigns()}
-                    disabled={totalSelected === 0 || isGeneratingCampaigns || isGenerating}
-                    className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-fuchsia-500 to-rose-500 hover:from-fuchsia-600 hover:to-rose-600 text-white shadow-md shadow-fuchsia-500/20"
-                  >
-                    {isGeneratingCampaigns ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Creating all...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}
-                      </>
-                    )}
-                  </button>
-                );
+                if (campaignTab === 'scenes') {
+                  const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedCampaignObjects?.length || 0), 0);
+                  return (
+                    <button
+                      onClick={() => generateCampaigns()}
+                      disabled={totalSelected === 0 || isGeneratingCampaigns || isGenerating}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-fuchsia-500 to-rose-500 hover:from-fuchsia-600 hover:to-rose-600 text-white shadow-md shadow-fuchsia-500/20"
+                    >
+                      {isGeneratingCampaigns ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating all...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}
+                        </>
+                      )}
+                    </button>
+                  );
+                } else {
+                  const totalSelected = apparelItems.reduce((sum, i) => sum + (i.selectedPressPalettes?.length || 0), 0);
+                  return (
+                    <button
+                      onClick={() => generatePressImages()}
+                      disabled={totalSelected === 0 || isGeneratingPress || isGenerating}
+                      className="px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md shadow-amber-500/20"
+                    >
+                      {isGeneratingPress ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating all...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Generate All {totalSelected > 0 ? `(${totalSelected})` : ''}
+                        </>
+                      )}
+                    </button>
+                  );
+                }
               })()}
             </div>
 
+            {/* Campaign Type Tabs */}
+            <div className="flex items-center gap-2 mb-6">
+              <button
+                onClick={() => setCampaignTab('scenes')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'scenes'
+                    ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Mixed-Media Scenes
+                <span className="text-[9px] text-gray-400 font-normal">1:1</span>
+              </button>
+              <button
+                onClick={() => setCampaignTab('press')}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+                  campaignTab === 'press'
+                    ? 'bg-white shadow-sm border border-gray-200 text-gray-900'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                Press Release
+                <span className="text-[9px] text-gray-400 font-normal">9:16</span>
+              </button>
+            </div>
+
+            {campaignTab === 'scenes' ? (
             <div className="space-y-6">
               {apparelItems.map((item) => {
                 const hero = item.heroColor || '#6366f1';
@@ -1578,6 +1815,161 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
                 );
               })}
             </div>
+            ) : (
+            <div className="space-y-6">
+              {apparelItems.map((item) => {
+                const selectedPalettes = item.selectedPressPalettes || [];
+                const hasSelection = selectedPalettes.length > 0;
+                const isItemGenerating = item.pressStatus === 'generating';
+                const pressImages = item.pressImages || [];
+                return (
+                  <div key={`press-${item.id}`} className="glass rounded-2xl overflow-hidden">
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                      <img src={item.images[0].preview} alt="ref" className="w-11 h-11 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 truncate">Press Release Key Visuals</span>
+                          {item.uploadMode === 'printed' && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">Printed</span>
+                          )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">{selectedPalettes.length} selected</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400">{item.images.length} reference{item.images.length > 1 ? 's' : ''} · 9:16 vertical</p>
+                      </div>
+                      <button
+                        onClick={() => generatePressImages(item.id)}
+                        disabled={!hasSelection || isItemGenerating || isGenerating || isGeneratingPress}
+                        className="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm"
+                      >
+                        {isItemGenerating ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            {item.pressProgress ? `${item.pressProgress.current + 1}/${item.pressProgress.total}` : 'Creating'}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Generate {hasSelection ? `(${selectedPalettes.length})` : ''}
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Palette Selection */}
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Select Palettes (multiple)</label>
+                        <div className="flex gap-2 text-[10px]">
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedPressPalettes: PRESS_PALETTES.map(p => p.id) } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Select all
+                          </button>
+                          <span className="text-gray-200">·</span>
+                          <button
+                            onClick={() => setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, selectedPressPalettes: [] } : i))}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                        {PRESS_PALETTES.map(palette => {
+                          const isSelected = selectedPalettes.includes(palette.id);
+                          return (
+                            <button
+                              key={palette.id}
+                              onClick={() => togglePressPalette(item.id, palette.id)}
+                              disabled={isItemGenerating}
+                              className={`p-2 rounded-lg transition-all duration-200 border disabled:opacity-50 text-left ${
+                                isSelected
+                                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-amber-200'
+                              }`}
+                            >
+                              <div className="w-full aspect-[9/16] rounded-md mb-1.5 border" style={{ backgroundColor: palette.backgroundHex, borderColor: isSelected ? 'rgba(255,255,255,0.2)' : '#e5e7eb' }} />
+                              <p className="text-[10px] font-semibold truncate">{palette.label}</p>
+                              <p className={`text-[8px] truncate ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>{palette.mood}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Results */}
+                    <div className="p-5">
+                      {pressImages.length === 0 && !isItemGenerating ? (
+                        <div className="py-10 flex flex-col items-center justify-center gap-2 text-center">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-gray-300" />
+                          </div>
+                          <p className="text-xs text-gray-400">Select one or more palettes, then hit Generate</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                          {(() => {
+                            const selectedDefs = PRESS_PALETTES.filter(p => selectedPalettes.includes(p.id));
+                            const total = isItemGenerating && item.pressProgress ? item.pressProgress.total : selectedDefs.length;
+                            const currentIdx = item.pressProgress?.current ?? -1;
+                            return selectedDefs.slice(0, Math.max(total, pressImages.length)).map((palette, idx) => {
+                              const generated = pressImages.find(c => c.paletteId === palette.id);
+                              const isCurrent = isItemGenerating && idx === currentIdx;
+                              const isWaiting = isItemGenerating && idx > currentIdx && !generated;
+                              return (
+                                <div key={palette.id} className="group">
+                                  <div className={`aspect-[9/16] rounded-xl overflow-hidden relative border transition-all ${
+                                    generated ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100'
+                                  } ${isCurrent ? 'ring-1 ring-amber-300' : ''}`} style={{ backgroundColor: generated ? 'transparent' : palette.backgroundHex }}>
+                                    {generated ? (
+                                      <>
+                                        <img src={generated.view.url} alt={palette.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-2">
+                                          <button
+                                            onClick={() => downloadImage(generated.view.url, `VPPA_Press_${palette.id}_${item.id}.png`)}
+                                            className="w-full py-1.5 rounded-lg bg-white text-gray-700 text-[9px] font-semibold flex items-center justify-center gap-1 hover:bg-gray-50 shadow-sm"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            Save
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : isCurrent ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                                        <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                                        <div className="w-8 h-0.5 rounded-full bg-amber-100 overflow-hidden">
+                                          <div className="h-full bg-amber-400 rounded-full shimmer" style={{ width: '60%' }} />
+                                        </div>
+                                      </div>
+                                    ) : isWaiting ? (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center opacity-30">
+                                        <ImageIcon className="w-4 h-4 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className={`text-[10px] mt-1.5 text-center font-medium truncate ${
+                                    generated ? 'text-gray-500' : isCurrent ? 'text-amber-500' : 'text-gray-300'
+                                  }`}>
+                                    {palette.label}
+                                  </p>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
           </motion.section>
         )}
       </main>
