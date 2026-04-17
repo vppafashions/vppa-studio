@@ -40,30 +40,7 @@ interface ApparelItem {
   campaignStatus?: 'idle' | 'generating' | 'completed' | 'error';
 }
 
-interface CampaignObject {
-  id: string;
-  label: string;
-  prompt: string;
-  emoji: string;
-}
 
-const CAMPAIGN_OBJECTS: CampaignObject[] = [
-  { id: 'shopping-bag', label: 'Luxury Shopping Bag', prompt: 'a massive oversized luxury paper shopping bag with rope handles, rectangular body, sharp folded edges', emoji: 'SB' },
-  { id: 'sneaker', label: 'Giant Sneaker', prompt: 'an enormous sneaker/trainer shown in full side profile, prominent laces, chunky sole, athletic silhouette', emoji: 'SN' },
-  { id: 'hanger', label: 'Oversized Hanger', prompt: 'a giant wooden clothes hanger with a curved metal hook at top, triangular wooden frame', emoji: 'HG' },
-  { id: 'sunglasses', label: 'Huge Sunglasses', prompt: 'massive oversized aviator or wayfarer sunglasses with two lenses and a bridge, thick frames', emoji: 'SG' },
-  { id: 'handbag', label: 'Giant Handbag', prompt: 'a monumentally oversized luxury handbag with a long shoulder chain strap, rectangular body, clasp detail', emoji: 'HB' },
-  { id: 'perfume', label: 'Perfume Bottle', prompt: 'a giant rectangular glass-style perfume bottle with a prominent cap, elegant proportions', emoji: 'PF' },
-  { id: 'coffee-cup', label: 'Takeaway Coffee Cup', prompt: 'an oversized takeaway coffee cup with a domed lid, corrugated cardboard sleeve, a straw or steam lines', emoji: 'CC' },
-  { id: 'boombox', label: 'Retro Boombox', prompt: 'a massive 80s style boombox with two large round speakers, cassette deck center, carrying handle on top, antenna', emoji: 'BX' },
-  { id: 'polaroid', label: 'Polaroid Camera', prompt: 'an oversized polaroid instant camera, boxy rectangular shape with round lens, flash, and a photo emerging from the slot', emoji: 'PL' },
-  { id: 'magazine', label: 'Fashion Magazine', prompt: 'a giant open fashion magazine held in mid-air, spread showing two pages, curved paper edges', emoji: 'MG' },
-  { id: 'cap', label: 'Oversized Cap', prompt: 'a huge baseball cap/snapback shown from the side, curved brim, panel structure, adjustable strap', emoji: 'CP' },
-  { id: 'umbrella', label: 'Giant Umbrella', prompt: 'a massive open umbrella from a side/three-quarter angle, canopy with visible panels, curved handle extending downward', emoji: 'UB' },
-  { id: 'cassette', label: 'Cassette Tape', prompt: 'a giant retro cassette tape, two circular reels visible through the plastic window, label area in center', emoji: 'CS' },
-  { id: 'vinyl', label: 'Vinyl Record', prompt: 'a giant vinyl record with its sleeve partially slid out, circular record with center label and radial grooves', emoji: 'VN' },
-  { id: 'skateboard', label: 'Skateboard', prompt: 'an oversized skateboard shown from the side/angle with visible wheels and deck, trucks exposed', emoji: 'SK' },
-];
 
 const MAX_PHOTOS_PER_ITEM = 5;
 
@@ -286,7 +263,6 @@ function StudioApp() {
         status: 'idle',
         uploadMode: 'standard',
         heroColor,
-        campaignObject: CAMPAIGN_OBJECTS[0].id,
         campaignStatus: 'idle'
       }
     ]);
@@ -343,7 +319,6 @@ function StudioApp() {
         status: 'idle',
         uploadMode: 'printed',
         heroColor,
-        campaignObject: CAMPAIGN_OBJECTS[0].id,
         campaignStatus: 'idle'
       }
     ]);
@@ -686,8 +661,50 @@ Also provide a one-sentence product description.`,
     }
   };
 
-  const updateCampaignField = (itemId: string, field: 'heroColor' | 'campaignObject', value: string) => {
+  const updateCampaignField = (itemId: string, field: 'heroColor', value: string) => {
     setApparelItems(prev => prev.map(i => i.id === itemId ? { ...i, [field]: value } : i));
+  };
+
+  const pickCampaignObject = async (imageDataParts: { data: string; mimeType: string }[], gender: Gender): Promise<{ object: string; interaction: string }> => {
+    const parts: any[] = imageDataParts.map(img => ({
+      inlineData: { data: img.data, mimeType: img.mimeType }
+    }));
+
+    parts.push({
+      text: `You are a streetwear campaign art director for VPPA Fashions (an apparel brand for men and women).
+
+Look at this garment in the reference images. You need to pick ONE iconic, large, tangible fashion/lifestyle object that will be illustrated in flat white brush-pen 2D style next to a real model wearing this apparel.
+
+Rules for picking the object:
+1. It must PAIR visually and culturally with this type of garment (e.g., streetwear tee -> boombox/skateboard/sneaker; summer dress -> beach umbrella/surfboard/shopping bag; formal -> luxury handbag/perfume bottle/polaroid; hoodie -> vintage camera/record player)
+2. It must be LARGE enough for a human to interact with at full scale
+3. It must allow a clear, physical, mid-action interaction (holding, riding, leaning against, standing on, emerging from)
+4. NO animals. NO logos. NO another piece of clothing. Pick a real tangible object.
+5. The model is a ${gender === 'women' ? 'young woman' : 'young man'} - pick something that matches their energy.
+
+Respond in EXACTLY this format (no extra text, no markdown):
+OBJECT: [one line describing the physical object in detail, e.g. "a massive 80s boombox with two large round speakers, cassette deck in the center, carrying handle, antenna"]
+INTERACTION: [one line describing how the model physically interacts with it, e.g. "model carries the boombox on their shoulder, one hand gripping the top handle"]`
+    });
+
+    try {
+      const response = await genAI.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: { parts }
+      });
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const objectMatch = text.match(/OBJECT:\s*(.+)/i);
+      const interactionMatch = text.match(/INTERACTION:\s*(.+)/i);
+      return {
+        object: objectMatch?.[1]?.trim() || 'an oversized luxury shopping bag with rope handles',
+        interaction: interactionMatch?.[1]?.trim() || 'model holds the bag by its handles in front of their body'
+      };
+    } catch {
+      return {
+        object: 'an oversized luxury shopping bag with rope handles',
+        interaction: 'model holds the bag by its handles in front of their body'
+      };
+    }
   };
 
   const generateCampaigns = async (targetItemId?: string) => {
@@ -707,13 +724,17 @@ Also provide a one-sentence product description.`,
 
         const hero = item.heroColor || '#6366f1';
         const heroDark = darkenHex(hero, 20);
-        const objectDef = CAMPAIGN_OBJECTS.find(o => o.id === item.campaignObject) || CAMPAIGN_OBJECTS[0];
 
         const imageDataParts: { data: string; mimeType: string }[] = [];
         for (const img of item.images) {
           const base64 = await fileToBase64(img.file);
           imageDataParts.push({ data: base64, mimeType: getMimeType(img.file) });
         }
+
+        // Step 1: AI autonomously picks the best fashion object + interaction for this garment
+        const { object: pickedObject, interaction: pickedInteraction } = await pickCampaignObject(imageDataParts, selectedGender);
+
+        setApparelItems(prev => prev.map(i => i.id === item.id ? { ...i, campaignObject: pickedObject } : i));
 
         const parts: any[] = imageDataParts.map(img => ({
           inlineData: { data: img.data, mimeType: img.mimeType }
@@ -742,11 +763,11 @@ MODEL (REAL PHOTOGRAPHIC CUTOUT):
 - Pose is active, caught mid-action. The body position must make the physical interaction with the illustrated object feel natural and real.
 
 ILLUSTRATED OBJECT (HAND-DRAWN 2D):
-- Object: ${objectDef.prompt}.
+- Object: ${pickedObject}.
 - Drawn in pure white (#FFFFFF) only. Flat 2D illustration, brush-pen marker line quality, 3-5px line weight, slightly imperfect organic edges (hand-drawn feel, not vector-perfect). NO shading, NO gradients, flat white fill only.
 - SCALE: the object must be MASSIVE -- at least 40% of canvas height. Monumental oversized scale is encouraged.
 - DEPTH LAYERING is critical: parts of the object sit BEHIND the model, parts come IN FRONT of the model. The model's real hands or feet make contact at the intersection point so the scene reads as integrated, not collaged.
-- INTERACTION: the model is actively holding, wearing, standing on, riding, leaning against, or emerging from the object. The relationship must be instantly readable in 2 seconds. Caught mid-action, alive.
+- INTERACTION: ${pickedInteraction}. The relationship must be instantly readable in 2 seconds. Caught mid-action, alive.
 
 BRAND STAMP:
 - One small "VPPA" wordmark naturally embedded on the surface of the illustrated object -- as if printed, engraved, or stitched -- rendered in ${heroDark}. Subtle, not dominant.
@@ -1246,7 +1267,6 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
               {apparelItems.map((item) => {
                 const hero = item.heroColor || '#6366f1';
                 const heroDark = darkenHex(hero, 20);
-                const objectDef = CAMPAIGN_OBJECTS.find(o => o.id === item.campaignObject) || CAMPAIGN_OBJECTS[0];
                 return (
                   <div key={`campaign-${item.id}`} className="glass rounded-2xl overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
@@ -1277,18 +1297,16 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
                       )}
                     </div>
 
-                    <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-gray-100">
+                    <div className="px-5 py-4 border-b border-gray-100 space-y-3">
                       <div>
                         <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-2 block">Hero Color</label>
                         <div className="flex items-center gap-2">
-                          <div className="relative">
-                            <input
-                              type="color"
-                              value={hero}
-                              onChange={(e) => updateCampaignField(item.id, 'heroColor', e.target.value)}
-                              className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
-                            />
-                          </div>
+                          <input
+                            type="color"
+                            value={hero}
+                            onChange={(e) => updateCampaignField(item.id, 'heroColor', e.target.value)}
+                            className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+                          />
                           <div className="flex-1 flex items-center gap-2 px-2 py-2 rounded-lg bg-white border border-gray-200">
                             <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: hero }} />
                             <span className="text-[11px] font-mono text-gray-600 uppercase">{hero}</span>
@@ -1300,18 +1318,16 @@ Reproduce the EXACT apparel from the provided reference images on the model. Out
                         </div>
                         <p className="text-[9px] text-gray-300 mt-1.5">Auto-detected from apparel</p>
                       </div>
-                      <div>
-                        <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-2 block">Illustrated Object</label>
-                        <select
-                          value={item.campaignObject || CAMPAIGN_OBJECTS[0].id}
-                          onChange={(e) => updateCampaignField(item.id, 'campaignObject', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-gray-700 focus:outline-none focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-100 transition-all"
-                        >
-                          {CAMPAIGN_OBJECTS.map(obj => (
-                            <option key={obj.id} value={obj.id}>{obj.label}</option>
-                          ))}
-                        </select>
-                        <p className="text-[9px] text-gray-300 mt-1.5">{objectDef.label}</p>
+                      <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-fuchsia-50/60 border border-fuchsia-100">
+                        <Sparkles className="w-3.5 h-3.5 text-fuchsia-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-medium text-fuchsia-700 uppercase tracking-wider">AI Picks the Prop</p>
+                          {item.campaignObject ? (
+                            <p className="text-[11px] text-gray-600 mt-0.5 leading-snug line-clamp-2">{item.campaignObject}</p>
+                          ) : (
+                            <p className="text-[11px] text-gray-400 mt-0.5">Will be chosen automatically based on your apparel + model gender</p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
