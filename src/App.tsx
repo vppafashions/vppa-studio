@@ -14,11 +14,11 @@ const SHOW_BRAND_CAMPAIGNS = false;
 // Initialize Gemini API (used ONLY for image-to-text analysis, not image generation).
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
-// Image generation goes through Runware (Google direct image-gen is blocked for this account).
-// Runware exposes Nano Banana 2 (Gemini 3.1 Flash Image) under the model id "google:4@3".
+// Image generation goes through Runware.
+// As of July 1, 2026, Runware lists Nano Banana 2 Lite under the model id "google:nano-banana@2-lite".
 const RUNWARE_API_KEY = process.env.RUNWARE_API_KEY || "";
 const RUNWARE_ENDPOINT = "https://api.runware.ai/v1";
-const RUNWARE_IMAGE_MODEL = "google:4@3";
+const RUNWARE_IMAGE_MODEL = "google:nano-banana@2-lite";
 
 // Kept for backwards compatibility with code that references these constants.
 const IMAGE_MODEL_PRIMARY = RUNWARE_IMAGE_MODEL;
@@ -57,7 +57,7 @@ async function runWithConcurrency(
 // Map Gemini-style imageConfig (aspectRatio + imageSize) to Runware width/height.
 // Runware requires width/height between 256 and 4096 in multiples of 16.
 function resolveRunwareDimensions(aspectRatio?: string, imageSize?: string): { width: number; height: number } {
-  const sizeMap: Record<string, number> = { '0.5K': 512, '1K': 1024, '2K': 2048, '4K': 4096 };
+  const sizeMap: Record<string, number> = { '1K': 1024, '2K': 2048, '4K': 4096 };
   const base = sizeMap[imageSize || '1K'] ?? 1024;
   const parts = (aspectRatio || '1:1').split(':').map(s => parseInt(s, 10));
   const aw = Number.isFinite(parts[0]) && parts[0] > 0 ? parts[0] : 1;
@@ -1170,10 +1170,10 @@ function StudioApp() {
   const [selectedStyle, setSelectedStyle] = useState(BACKGROUND_STYLES[0]);
   const [selectedGender, setSelectedGender] = useState<Gender>('women');
   const [selectedEthnicity, setSelectedEthnicity] = useState<Ethnicity>('indian');
-  const [selectedImageSize, setSelectedImageSize] = useState<'0.5K' | '1K'>(() => {
-    if (typeof window === 'undefined') return '0.5K';
+  const [selectedImageSize, setSelectedImageSize] = useState<'1K'>(() => {
+    if (typeof window === 'undefined') return '1K';
     const saved = window.localStorage.getItem('vppa-image-size');
-    return saved === '1K' ? '1K' : '0.5K';
+    return '1K';
   });
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -3558,26 +3558,26 @@ Reproduce the EXACT apparel from the provided reference images. Output one image
               <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-3 block">
                 Resolution
               </label>
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-                {(['0.5K', '1K'] as const).map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedImageSize(size)}
-                    className={`px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${
-                      selectedImageSize === size
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                    }`}
-                    title={size === '0.5K' ? '512x512 - faster, ~$0.047/image' : '1024x1024 - sharper, ~$0.08/image'}
-                  >
-                    {size}
-                  </button>
-                ))}
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                  {(['1K'] as const).map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedImageSize(size)}
+                      className={`px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                        selectedImageSize === size
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                      }`}
+                      title="1024x1024 - sharper, ~$0.08/image"
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">
+                  1024x1024, sharper
+                </p>
               </div>
-              <p className="text-[9px] text-gray-400 mt-1.5 leading-relaxed">
-                {selectedImageSize === '0.5K' ? '512x512, faster' : '1024x1024, sharper'}
-              </p>
-            </div>
 
             {/* Generate */}
             <div className="lg:w-auto w-full">
