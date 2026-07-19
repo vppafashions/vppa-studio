@@ -11,21 +11,20 @@ import JSZip from 'jszip';
 
 const SHOW_BRAND_CAMPAIGNS = false;
 
-// Initialize Gemini API (used ONLY for image-to-text analysis, not image generation).
+// Initialize Gemini API for analysis + image generation.
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
-// Image generation goes through Runware.
-// As of July 1, 2026, Runware lists Nano Banana 2 Lite under the model id "google:nano-banana@2-lite".
-const RUNWARE_API_KEY = process.env.RUNWARE_API_KEY || "";
-const RUNWARE_ENDPOINT = "https://api.runware.ai/v1";
-const RUNWARE_IMAGE_MODEL = "google:nano-banana@2-lite";
-
-// Kept for backwards compatibility with code that references these constants.
-const IMAGE_MODEL_PRIMARY = RUNWARE_IMAGE_MODEL;
-const IMAGE_MODEL_FALLBACK = RUNWARE_IMAGE_MODEL;
-const IMAGE_MODEL = RUNWARE_IMAGE_MODEL;
+// Image generation via Google Gemini directly.
+// Same model as Runware's google:nano-banana@2-lite → Nano Banana 2 Lite.
+// Docs: https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite-image
+// Note: Lite is optimized for 1K only (2K/4K unsupported).
+const IMAGE_MODEL_PRIMARY = 'gemini-3.1-flash-lite-image';
+const IMAGE_MODEL_FALLBACK = 'gemini-2.5-flash-image';
+const IMAGE_MODEL = IMAGE_MODEL_PRIMARY;
 const ANALYSIS_MODEL = 'gemini-3-flash-preview';
 
+// Once primary hits hard-quota 429 (limit:0), skip it for the rest of the session.
+let imageModelDegraded = false;
 // Optional hook: set by the app so the helper can surface a one-time info toast.
 let onImageModelFallback: ((msg: string) => void) | null = null;
 
@@ -54,147 +53,41 @@ async function runWithConcurrency(
   );
 }
 
-// Map Gemini-style imageConfig (aspectRatio + imageSize) to Runware width/height.
-// Runware requires width/height between 256 and 4096 in multiples of 16.
-function resolveRunwareDimensions(aspectRatio?: string, imageSize?: string): { width: number; height: number } {
-  const sizeMap: Record<string, number> = { '1K': 1024, '2K': 2048, '4K': 4096 };
-  const base = sizeMap[imageSize || '1K'] ?? 1024;
-  const parts = (aspectRatio || '1:1').split(':').map(s => parseInt(s, 10));
-  const aw = Number.isFinite(parts[0]) && parts[0] > 0 ? parts[0] : 1;
-  const ah = Number.isFinite(parts[1]) && parts[1] > 0 ? parts[1] : 1;
-  let w: number;
-  let h: number;
-  if (aw >= ah) {
-    w = base;
-    h = Math.round((base * ah) / aw);
-  } else {
-    h = base;
-    w = Math.round((base * aw) / ah);
-  }
-  const snap = (n: number) => Math.max(256, Math.min(4096, Math.round(n / 16) * 16));
-  return { width: snap(w), height: snap(h) };
-}
-
-function makeUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    try { return crypto.randomUUID(); } catch { /* fall through */ }
-  }
-  // RFC4122 v4 fallback.
-  const bytes = new Uint8Array(16);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(bytes);
-  else for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-// Helper: call Runware imageInference with automatic retry on transient errors.
-// Accepts the legacy Gemini-shaped params ({ contents: { parts: [{inlineData}, ..., {text}] }, config: { imageConfig } })
-// and returns a Gemini-shaped response so existing call sites continue to work without modification.
+// Helper: call Gemini generateContent with retry on 429, then fallback model.
 async function callImageGenWithRetry(params: any, maxRetries = 2): Promise<any> {
-  if (!RUNWARE_API_KEY) {
-    throw new Error('Missing RUNWARE_API_KEY. Add it to .env and rebuild.');
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('Missing GEMINI_API_KEY. Add it to .env and rebuild.');
   }
 
-  const allParts: any[] = Array.isArray(params?.contents?.parts) ? params.contents.parts : [];
-  const referenceImages: string[] = [];
-  const textChunks: string[] = [];
-  for (const p of allParts) {
-    if (p?.inlineData?.data) {
-      const mime = p.inlineData.mimeType || 'image/png';
-      referenceImages.push(`data:${mime};base64,${p.inlineData.data}`);
-    } else if (typeof p?.text === 'string' && p.text.trim()) {
-      textChunks.push(p.text);
-    }
-  }
-  const positivePrompt = textChunks.join('\n\n').trim() || 'Generate a high quality image.';
-
-  const imageConfig = params?.config?.imageConfig || {};
-  const { width, height } = resolveRunwareDimensions(imageConfig.aspectRatio, imageConfig.imageSize);
-
+  const originalModel = params?.model || IMAGE_MODEL_PRIMARY;
+  const primaryModel = imageModelDegraded ? IMAGE_MODEL_FALLBACK : originalModel;
   let lastErr: any = null;
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const task: Record<string, any> = {
-        taskType: 'imageInference',
-        taskUUID: makeUUID(),
-        model: RUNWARE_IMAGE_MODEL,
-        positivePrompt,
-        width,
-        height,
-        numberResults: 1,
-        outputType: 'base64Data',
-        outputFormat: 'PNG',
-        includeCost: false,
-        providerSettings: { google: { safetyTolerance: 'off' } },
-      };
-      if (referenceImages.length > 0) {
-        task.inputs = { referenceImages };
-      }
-
-      const res = await fetch(RUNWARE_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${RUNWARE_API_KEY}`,
-        },
-        body: JSON.stringify([task]),
-      });
-
-      let json: any = null;
-      try { json = await res.json(); } catch { /* keep null */ }
-
-      if (!res.ok) {
-        const apiMsg = json?.errors?.[0]?.message || json?.error || `Runware HTTP ${res.status}`;
-        throw new Error(apiMsg);
-      }
-      if (json?.errors?.length) {
-        throw new Error(json.errors[0].message || 'Runware request failed.');
-      }
-
-      const item = (json?.data || []).find((d: any) => d?.taskType === 'imageInference') || (json?.data || [])[0];
-      if (!item) throw new Error('Runware: empty response from imageInference.');
-
-      let base64 = '';
-      let mimeType = 'image/png';
-      if (typeof item.imageBase64Data === 'string' && item.imageBase64Data.length > 0) {
-        base64 = item.imageBase64Data;
-      } else if (typeof item.imageDataURI === 'string') {
-        const m = item.imageDataURI.match(/^data:([^;]+);base64,(.+)$/);
-        if (m) { mimeType = m[1]; base64 = m[2]; }
-      } else if (typeof item.imageURL === 'string') {
-        const imgRes = await fetch(item.imageURL);
-        if (!imgRes.ok) throw new Error(`Failed to download Runware image (${imgRes.status}).`);
-        const buf = await imgRes.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let binary = '';
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        base64 = typeof btoa === 'function' ? btoa(binary) : Buffer.from(bytes).toString('base64');
-        const ct = imgRes.headers.get('content-type');
-        if (ct) mimeType = ct.split(';')[0];
-      } else {
-        throw new Error('Runware: response did not include any image payload.');
-      }
-
-      return {
-        candidates: [{
-          content: {
-            parts: [
-              { inlineData: { data: base64, mimeType } },
-            ],
-          },
-        }],
-      };
+      return await genAI.models.generateContent({ ...params, model: primaryModel });
     } catch (err: any) {
       lastErr = err;
       const msg = typeof err?.message === 'string' ? err.message : JSON.stringify(err || {});
-      const isTransient = /\b(429|408|500|502|503|504)\b/.test(msg)
-        || /timeout|rate ?limit|temporarily|busy|try again/i.test(msg);
-      if (!isTransient || attempt === maxRetries) throw err;
-      const delayMs = Math.min(15000, Math.pow(2, attempt) * 1000);
+      const is429 = msg.includes('RESOURCE_EXHAUSTED') || msg.includes('"code":429') || msg.includes(' 429');
+      const isHardQuota = msg.includes('limit: 0') || msg.includes('limit":0');
+      if (!is429) throw err;
+      if (isHardQuota || attempt === maxRetries) break;
+      const retryMatch = msg.match(/retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
+      const delaySec = retryMatch ? parseFloat(retryMatch[1]) : Math.pow(2, attempt);
+      const delayMs = Math.min(30000, Math.max(1000, delaySec * 1000));
       await new Promise(r => setTimeout(r, delayMs));
     }
+  }
+
+  if (primaryModel !== IMAGE_MODEL_FALLBACK) {
+    const wasFirstDegradation = !imageModelDegraded;
+    imageModelDegraded = true;
+    console.warn(`[image] primary model ${primaryModel} exhausted, falling back to ${IMAGE_MODEL_FALLBACK}`);
+    if (wasFirstDegradation && onImageModelFallback) {
+      onImageModelFallback(`Nano Banana 2 Lite quota hit. Falling back to ${IMAGE_MODEL_FALLBACK} for the rest of this session.`);
+    }
+    return await genAI.models.generateContent({ ...params, model: IMAGE_MODEL_FALLBACK });
   }
   throw lastErr;
 }
@@ -1208,12 +1101,8 @@ function StudioApp() {
 
   const describeError = (err: any): string => {
     const msg = typeof err?.message === 'string' ? err.message : '';
-    if (/RUNWARE_API_KEY/i.test(msg)) return 'Missing RUNWARE_API_KEY. Check .env and rebuild.';
-    if (/invalid api key|invalidapikey/i.test(msg)) return 'Invalid Runware API key. Check .env and rebuild.';
-    if (/insufficient|balance|credit/i.test(msg)) return 'Runware account is out of credits. Top up at my.runware.ai.';
-    if (/\b(429|rate ?limit|too many)\b/i.test(msg)) return 'Rate limit hit on Runware. Slow down batch size or wait a minute before retrying.';
-    if (/RESOURCE_EXHAUSTED|"code":429/.test(msg)) return 'Gemini analysis quota hit. Wait a minute or switch keys.';
-    if (/GEMINI_API_KEY|API_KEY/.test(msg)) return 'Invalid or missing GEMINI_API_KEY. Check .env and rebuild.';
+    if (/GEMINI_API_KEY|API_KEY_INVALID|API key not valid/i.test(msg)) return 'Invalid or missing GEMINI_API_KEY. Check .env and rebuild.';
+    if (/RESOURCE_EXHAUSTED|"code":429|\b(429|rate ?limit|too many)\b/i.test(msg)) return 'Gemini quota/rate limit hit. Wait a minute or try again.';
     if (/SAFETY|blocked|safety/i.test(msg)) return 'Prompt was blocked by safety filters. Try a different theme.';
     return msg.slice(0, 200) || 'Image generation failed. Check browser console for details.';
   };
